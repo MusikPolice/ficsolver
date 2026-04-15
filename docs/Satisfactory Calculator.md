@@ -238,15 +238,15 @@ Critiques identified before implementation. Resolved decisions logged inline bel
 
 ### Significant Gaps
 6. **Version string format inconsistency** — Architecture section shows raw Steam build ID; Frontend section shows 'Update 8.3'. These are different things; no mapping source is specified. **Resolved:** Raw Steam build ID used throughout. Implementation note added to check for a human-readable string in `en-CA.json` during Commit 2 and prefer it if found.
-7. **Server-side result cache unspecified** — No TTL, eviction policy, maximum size, or restart behavior defined. Unresolved.
-8. **`solve_id` format unspecified** — UUID, sequential int, or hash of inputs? Unresolved.
+7. **Server-side result cache unspecified** — No TTL, eviction policy, maximum size, or restart behavior defined. **Resolved:** In-memory dict for Stage 1. No TTL, no eviction; cache is lost on server restart. Revisit in Stage 2 if needed.
+8. **`solve_id` format unspecified** — UUID, sequential int, or hash of inputs? **Resolved:** UUID4.
 9. **`GET /items` and `GET /recipes` underspecified** — No pagination, no spec of what the frontend does with this data or what shape it needs. Unresolved.
-10. **DFS cap mid-traversal behavior** — When the 200-chain cap is hit during DFS, the behavior (abort branch, finish branch, drain stack) is unspecified. Unresolved.
-11. **Alternates panel UX** — Should all alternates be shown, or only those relevant to selected outputs? No sort order specified. Unresolved.
-12. **Playwright CI bootstrapping** — Baselines don't exist at project start. First `make ci` run behavior is undefined. Unresolved.
+10. **DFS cap mid-traversal behavior** — When the 200-chain cap is hit during DFS, the behavior (abort branch, finish branch, drain stack) is unspecified. **Resolved:** Abort current branch immediately, mark `cap_reached=true`. No partial chains — results must always be fully usable.
+11. **Alternates panel UX** — Should all alternates be shown, or only those relevant to selected outputs? No sort order specified. **Resolved:** Show only alternates relevant to the selected outputs, sorted alphabetically. Reduces clutter as the alternate list is large.
+12. **Playwright CI bootstrapping** — Baselines don't exist at project start. First `make ci` run behavior is undefined. **Resolved:** `updateSnapshots: "missing"` — baselines are auto-generated on first run (test always passes); subsequent runs compare against committed baselines. Regenerate with `playwright update-snapshots` after intentional UI changes.
 13. **CORS/nginx proxy config** — Vite proxies `/api` in dev, but production nginx proxy config is not specified. Unresolved.
 
 ### Minor
 14. **Clock speed rounding assumption** — Spec assumes Satisfactory only allows whole-number clock speed increments. This may not be accurate in recent game versions. Unresolved.
-15. **Build-gun recipe handling in Commit 2** — Should the Stage 1 parser store or discard build-gun recipes? Unresolved.
+15. **Build-gun recipe handling in Commit 2** — Should the Stage 1 parser store or discard build-gun recipes? **Resolved:** Parse and store in a separate collection, distinct from production recipes. Stage 2 needs them for build cost; Stage 1 ignores them at solve time.
 16. **Auth/security** — No stated decision on whether the media server deployment is auth-gated or LAN-only. Unresolved.

@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Claude Code local settings (machine-specific permissions)
+.claude/
+
+# Game data (fetched at build time via make fetch-game-data, not committed)
+data/game/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
