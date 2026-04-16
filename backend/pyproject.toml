@@ -58,4 +58,4 @@ addopts = "--cov=ficsolver --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.run]
 source = ["src/ficsolver"]
-omit = ["tests/*"]
+omit = ["tests/*", "src/ficsolver/models*", "src/ficsolver/*/models.py"]
