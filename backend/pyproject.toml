@@ -49,6 +49,10 @@ strict = true
 python_version = "3.12"
 mypy_path = "src"
 
+[[tool.mypy.overrides]]
+module = "networkx.*"
+ignore_missing_imports = true
+
 # ---------------------------------------------------------------------------
 # pytest + coverage
 # ---------------------------------------------------------------------------

@@ -53,6 +53,46 @@ def _machine_ref(cls: str) -> str:
     return f'"{_GAME_ROOT}/Buildable/Factory/{folder}/{asset}.{cls}"'
 
 
+# ---------------------------------------------------------------------------
+# Cyclic fixture — a recipe that consumes and re-produces the same item,
+# creating a directed cycle in the bipartite graph (models aluminum recycling).
+# ---------------------------------------------------------------------------
+#
+#   Desc_AquaZorblax_C  → Recipe_AquaCycle_C → Desc_SolidZorblax_C
+#                       →                    → Desc_AquaZorblax_C   (cycle!)
+#
+CYCLIC_FIXTURE: list[dict] = [
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGItemDescriptor'",
+        "Classes": [
+            {"ClassName": "Desc_AquaZorblax_C", "mDisplayName": "Aqua Zorblax"},
+            {"ClassName": "Desc_SolidZorblax_C", "mDisplayName": "Solid Zorblax"},
+        ],
+    },
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGBuildableManufacturer'",
+        "Classes": [
+            {"ClassName": "Build_FabricatorMk1_C", "mDisplayName": "Fabricator"},
+        ],
+    },
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGRecipe'",
+        "Classes": [
+            {
+                "ClassName": "Recipe_AquaCycle_C",
+                "mDisplayName": "Aqua Cycle",
+                "mIngredients": f"({_item_ref('Desc_AquaZorblax_C', 1)})",
+                "mProduct": (
+                    f"({_item_ref('Desc_SolidZorblax_C', 1)},{_item_ref('Desc_AquaZorblax_C', 1)})"
+                ),
+                "mManufactoringDuration": "10.000000",
+                "mProducedIn": f"({_machine_ref('Build_FabricatorMk1_C')})",
+            },
+        ],
+    },
+]
+
+
 FIXTURE: list[dict] = [
     # ------------------------------------------------------------------
     # Items — FGItemDescriptor bucket
