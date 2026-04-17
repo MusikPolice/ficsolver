@@ -205,12 +205,14 @@ def test_production_recipes_not_build_gun(game_data: GameData) -> None:
 
 
 def test_recipe_count(game_data: GameData) -> None:
-    """All five fixture recipes should be returned."""
+    """All seven fixture recipes should be returned."""
     names = {r.class_name for r in game_data.recipes}
     assert names == {
         "Recipe_ZorblaxRod_C",
         "Recipe_ZorblaxPlate_C",
+        "Recipe_ReinforcedZorblaxPlate_C",
         "Recipe_Alternate_BondedZorblaxPlate_C",
+        "Recipe_Alternate_ZorblaxGear_C",
         "Recipe_ZorblaxFrame_C",
         "Recipe_Build_FabricatorMk1_C",
     }

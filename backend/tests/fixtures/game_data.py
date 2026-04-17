@@ -22,18 +22,23 @@ Fictional universe — "Zorblax" materials processed in a "Fabricator" or "Assem
   Desc_Sprongite_C          "Sprongite"                 secondary material
   Desc_ReinforcedZorblaxPlate_C  "Reinforced Zorblax Plate"   composite part
   Desc_ZorblaxFrame_C       "Zorblax Frame"             complex assembly
+  Desc_ZorblaxGear_C        "Zorblax Gear"              only via alternate recipe
   Desc_OreZorblax_C         "Zorblax Ore"               raw resource
 
 Per-minute rates (amount * 60 / duration_s):
 
   ZorblaxRod recipe       (duration=4s):   1*60/4  = 15.0/min  in,  15.0/min  out
   ZorblaxPlate recipe     (duration=6s):   3*60/6  = 30.0/min  in,  20.0/min  out
+  ReinforcedZorblaxPlate  (duration=20s):  3*60/20 =  9.0/min  plate in,
+                                           1*60/20 =  3.0/min  RZP out
   Bonded alt recipe       (duration=32s): 10*60/32 = 18.75/min plate in,
                                           20*60/32 = 37.50/min Sprongite in,
                                            3*60/32 =  5.625/min RZP out
   ZorblaxFrame recipe     (duration=60s):  3*60/60 =  3.0/min  RZP in,
                                           12*60/60 = 12.0/min  rod in,
                                            2*60/60 =  2.0/min  frame out
+  ZorblaxGear alt         (duration=40s):  5*60/40 =  7.5/min  rod in,
+                                           2*60/40 =  3.0/min  gear out
 """
 
 _GAME_ROOT = "/Game/FicSolverGame"
@@ -109,6 +114,7 @@ FIXTURE: list[dict] = [
                 "mDisplayName": "Reinforced Zorblax Plate",
             },
             {"ClassName": "Desc_ZorblaxFrame_C", "mDisplayName": "Zorblax Frame"},
+            {"ClassName": "Desc_ZorblaxGear_C", "mDisplayName": "Zorblax Gear"},
         ],
     },
     # ------------------------------------------------------------------
@@ -179,6 +185,26 @@ FIXTURE: list[dict] = [
                 ),
                 "mProduct": f"({_item_ref('Desc_ZorblaxFrame_C', 2)})",
                 "mManufactoringDuration": "60.000000",
+                "mProducedIn": f"({_machine_ref('Build_AssemblatronMk1_C')})",
+            },
+            # Standard RZP recipe (Assemblatron)
+            # 3 ZorblaxPlate → 1 RZP per 20 s  →  9/min in, 3/min out
+            {
+                "ClassName": "Recipe_ReinforcedZorblaxPlate_C",
+                "mDisplayName": "Reinforced Zorblax Plate",
+                "mIngredients": f"({_item_ref('Desc_ZorblaxPlate_C', 3)})",
+                "mProduct": f"({_item_ref('Desc_ReinforcedZorblaxPlate_C', 1)})",
+                "mManufactoringDuration": "20.000000",
+                "mProducedIn": f"({_machine_ref('Build_AssemblatronMk1_C')})",
+            },
+            # Alternate Zorblax Gear recipe (Assemblatron) — only via alternate
+            # 5 ZorblaxRod → 2 ZorblaxGear per 40 s  →  7.5/min in, 3/min out
+            {
+                "ClassName": "Recipe_Alternate_ZorblaxGear_C",
+                "mDisplayName": "Alternate: Zorblax Gear",
+                "mIngredients": f"({_item_ref('Desc_ZorblaxRod_C', 5)})",
+                "mProduct": f"({_item_ref('Desc_ZorblaxGear_C', 2)})",
+                "mManufactoringDuration": "40.000000",
                 "mProducedIn": f"({_machine_ref('Build_AssemblatronMk1_C')})",
             },
             # Build-gun recipe — must be flagged is_build_gun=True

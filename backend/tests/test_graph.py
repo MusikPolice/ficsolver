@@ -21,13 +21,13 @@ def cyclic_game_data():  # type: ignore[no-untyped-def]
 def test_item_node_count(game_data) -> None:  # type: ignore[no-untyped-def]
     g = build_recipe_graph(game_data)
     item_nodes = [n for n, d in g.nodes(data=True) if d["node_type"] == "item"]
-    assert len(item_nodes) == 7  # 6 FGItemDescriptor + 1 FGResourceDescriptor
+    assert len(item_nodes) == 8  # 7 FGItemDescriptor + 1 FGResourceDescriptor
 
 
 def test_recipe_node_count(game_data) -> None:  # type: ignore[no-untyped-def]
     g = build_recipe_graph(game_data)
     recipe_nodes = [n for n, d in g.nodes(data=True) if d["node_type"] == "recipe"]
-    assert len(recipe_nodes) == 4  # 4 production recipes; build-gun excluded
+    assert len(recipe_nodes) == 6  # 6 production recipes; build-gun excluded
 
 
 def test_build_gun_excluded(game_data) -> None:  # type: ignore[no-untyped-def]

@@ -22,7 +22,7 @@ def test_list_items_status(client: TestClient) -> None:
 
 def test_list_items_count(client: TestClient) -> None:
     items = client.get("/items").json()
-    assert len(items) == 7  # 6 FGItemDescriptor + 1 FGResourceDescriptor
+    assert len(items) == 8  # 7 FGItemDescriptor + 1 FGResourceDescriptor
 
 
 def test_list_items_shape(client: TestClient) -> None:
@@ -38,7 +38,7 @@ def test_list_recipes_status(client: TestClient) -> None:
 
 def test_list_recipes_count(client: TestClient) -> None:
     recipes = client.get("/recipes").json()
-    assert len(recipes) == 5  # 4 production + 1 build-gun
+    assert len(recipes) == 7  # 6 production + 1 build-gun
 
 
 def test_list_recipes_shape(client: TestClient) -> None:
@@ -62,8 +62,10 @@ def test_list_recipes_ingredient_shape(client: TestClient) -> None:
 def test_list_recipes_includes_alternate(client: TestClient) -> None:
     recipes = client.get("/recipes").json()
     alternates = [r for r in recipes if r["is_alternate"]]
-    assert len(alternates) == 1
-    assert alternates[0]["class_name"] == "Recipe_Alternate_BondedZorblaxPlate_C"
+    assert len(alternates) == 2
+    alt_names = {r["class_name"] for r in alternates}
+    assert "Recipe_Alternate_BondedZorblaxPlate_C" in alt_names
+    assert "Recipe_Alternate_ZorblaxGear_C" in alt_names
 
 
 def test_list_recipes_includes_build_gun(client: TestClient) -> None:
