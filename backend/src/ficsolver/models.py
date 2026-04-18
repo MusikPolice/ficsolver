@@ -46,3 +46,23 @@ class GameData:
     items: dict[str, Item]  # keyed by class_name
     machines: dict[str, Machine]  # keyed by class_name
     recipes: list[Recipe]
+
+
+@dataclass
+class MachineGroup:
+    """One group of identical machines running the same recipe."""
+
+    recipe: Recipe
+    machine_count: int
+    clock_speed_pct: int  # whole-number percent, e.g. 84
+    exact_recipe_rate: float  # solver solution: machines-equivalent at 100%
+
+
+@dataclass
+class SolverChain:
+    """Phase 2 result for one RecipeSelection."""
+
+    machine_groups: list[MachineGroup]
+    raw_resource_consumption: dict[str, float]  # item_class -> rate/min consumed (positive)
+    implicit_outputs: dict[str, float]  # item_class -> rate/min surplus (not declared as desired)
+    has_cycle: bool
