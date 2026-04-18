@@ -591,3 +591,30 @@ def check_budget(
         )
 
     return BudgetComparison(entries=entries, has_deficit=has_deficit)
+
+
+# ===========================================================================
+# Phase 2 retry support
+# ===========================================================================
+
+
+def retry_with_dedicated_recipe(
+    selection: RecipeSelection,
+    item_class: str,
+    game_data: GameData,
+    unlocked_alternates: set[str],
+) -> RecipeSelection | None:
+    """Return a new selection that adds a dedicated recipe for item_class.
+
+    Used when Phase 2 returns Phase2Failure because a byproduct rate is
+    insufficient.  Removes the byproduct dependency for item_class and adds
+    the first available producer recipe that is not already in the selection.
+    Returns None if no such producer exists.
+    """
+    producers = _get_available_producers(item_class, game_data, unlocked_alternates)
+    for producer in producers:
+        if producer.class_name not in selection.recipes:
+            new_recipes = {**selection.recipes, producer.class_name: producer}
+            new_deps = {k: v for k, v in selection.byproduct_deps.items() if k != item_class}
+            return RecipeSelection(new_recipes, _detect_cycle(new_recipes), new_deps)
+    return None
