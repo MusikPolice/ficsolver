@@ -66,3 +66,21 @@ class SolverChain:
     raw_resource_consumption: dict[str, float]  # item_class -> rate/min consumed (positive)
     implicit_outputs: dict[str, float]  # item_class -> rate/min surplus (not declared as desired)
     has_cycle: bool
+
+
+@dataclass
+class ResourceBudgetEntry:
+    """Budget comparison for one resource."""
+
+    item_class: str
+    available: float  # declared in user inputs (0.0 if not declared)
+    consumed: float  # required by the chain
+    delta: float  # available - consumed; positive = surplus, negative = deficit
+
+
+@dataclass
+class BudgetComparison:
+    """Budget comparison for one SolverChain against the user's declared inputs."""
+
+    entries: dict[str, ResourceBudgetEntry]  # item_class -> entry
+    has_deficit: bool  # True if any delta < 0

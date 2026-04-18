@@ -17,7 +17,14 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ficsolver.models import GameData, MachineGroup, Recipe, SolverChain
+from ficsolver.models import (
+    BudgetComparison,
+    GameData,
+    MachineGroup,
+    Recipe,
+    ResourceBudgetEntry,
+    SolverChain,
+)
 
 
 @dataclass
@@ -549,3 +556,38 @@ def _solve_with_numpy(
         )
 
     return {recipe.class_name: float(x[j]) for j, recipe in enumerate(recipes)}
+
+
+# ===========================================================================
+# Budget checker
+# ===========================================================================
+
+
+def check_budget(
+    chain: SolverChain,
+    available_inputs: dict[str, float],
+) -> BudgetComparison:
+    """Compare chain resource consumption against the user's declared inputs.
+
+    Returns one ResourceBudgetEntry per resource that is either consumed by the
+    chain or declared as available (or both).  delta = available - consumed;
+    negative means a deficit.
+    """
+    all_resources = set(chain.raw_resource_consumption) | set(available_inputs)
+    entries: dict[str, ResourceBudgetEntry] = {}
+    has_deficit = False
+
+    for item_class in all_resources:
+        available = available_inputs.get(item_class, 0.0)
+        consumed = chain.raw_resource_consumption.get(item_class, 0.0)
+        delta = available - consumed
+        if delta < 0:
+            has_deficit = True
+        entries[item_class] = ResourceBudgetEntry(
+            item_class=item_class,
+            available=available,
+            consumed=consumed,
+            delta=delta,
+        )
+
+    return BudgetComparison(entries=entries, has_deficit=has_deficit)
