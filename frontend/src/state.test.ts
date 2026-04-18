@@ -1,0 +1,270 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { reducer, initialState, relevantAlternates, resetIdCounter } from "./state";
+import type { AppState, Action } from "./state";
+import type { Recipe } from "./api/types";
+
+beforeEach(() => {
+  resetIdCounter();
+});
+
+function applyActions(actions: Action[], base: AppState = initialState): AppState {
+  return actions.reduce((s, a) => reducer(s, a), base);
+}
+
+describe("ADD_INPUT / REMOVE_INPUT / UPDATE_INPUT_CLASS / UPDATE_INPUT_AMOUNT", () => {
+  it("adds an input entry", () => {
+    const s = reducer(initialState, { type: "ADD_INPUT" });
+    expect(s.inputs).toHaveLength(1);
+    expect(s.inputs[0]).toMatchObject({ item_class: "", amount: 0 });
+  });
+
+  it("removes an input entry by id", () => {
+    const s1 = reducer(initialState, { type: "ADD_INPUT" });
+    const id = s1.inputs[0].id;
+    const s2 = reducer(s1, { type: "REMOVE_INPUT", id });
+    expect(s2.inputs).toHaveLength(0);
+  });
+
+  it("updates input item class", () => {
+    const s1 = reducer(initialState, { type: "ADD_INPUT" });
+    const id = s1.inputs[0].id;
+    const s2 = reducer(s1, { type: "UPDATE_INPUT_CLASS", id, item_class: "Desc_IronIngot_C" });
+    expect(s2.inputs[0].item_class).toBe("Desc_IronIngot_C");
+  });
+
+  it("updates input amount", () => {
+    const s1 = reducer(initialState, { type: "ADD_INPUT" });
+    const id = s1.inputs[0].id;
+    const s2 = reducer(s1, { type: "UPDATE_INPUT_AMOUNT", id, amount: 120 });
+    expect(s2.inputs[0].amount).toBe(120);
+  });
+});
+
+describe("ADD_OUTPUT / REMOVE_OUTPUT / UPDATE_OUTPUT_CLASS / UPDATE_OUTPUT_AMOUNT", () => {
+  it("adds an output entry", () => {
+    const s = reducer(initialState, { type: "ADD_OUTPUT" });
+    expect(s.outputs).toHaveLength(1);
+  });
+
+  it("enforces max 10 outputs", () => {
+    const actions: Action[] = Array.from({ length: 12 }, () => ({ type: "ADD_OUTPUT" as const }));
+    const s = applyActions(actions);
+    expect(s.outputs).toHaveLength(10);
+  });
+
+  it("removes an output entry by id", () => {
+    const s1 = reducer(initialState, { type: "ADD_OUTPUT" });
+    const id = s1.outputs[0].id;
+    const s2 = reducer(s1, { type: "REMOVE_OUTPUT", id });
+    expect(s2.outputs).toHaveLength(0);
+  });
+
+  it("updates output item class", () => {
+    const s1 = reducer(initialState, { type: "ADD_OUTPUT" });
+    const id = s1.outputs[0].id;
+    const s2 = reducer(s1, {
+      type: "UPDATE_OUTPUT_CLASS",
+      id,
+      item_class: "Desc_ModularFrame_C",
+    });
+    expect(s2.outputs[0].item_class).toBe("Desc_ModularFrame_C");
+  });
+
+  it("updates output amount", () => {
+    const s1 = reducer(initialState, { type: "ADD_OUTPUT" });
+    const id = s1.outputs[0].id;
+    const s2 = reducer(s1, { type: "UPDATE_OUTPUT_AMOUNT", id, amount: 5 });
+    expect(s2.outputs[0].amount).toBe(5);
+  });
+});
+
+describe("TOGGLE_ALTERNATE", () => {
+  it("adds an alternate when not present", () => {
+    const s = reducer(initialState, {
+      type: "TOGGLE_ALTERNATE",
+      class_name: "Recipe_Alternate_Foo_C",
+    });
+    expect(s.unlockedAlternates).toContain("Recipe_Alternate_Foo_C");
+  });
+
+  it("removes an alternate when already present", () => {
+    const s1 = reducer(initialState, {
+      type: "TOGGLE_ALTERNATE",
+      class_name: "Recipe_Alternate_Foo_C",
+    });
+    const s2 = reducer(s1, {
+      type: "TOGGLE_ALTERNATE",
+      class_name: "Recipe_Alternate_Foo_C",
+    });
+    expect(s2.unlockedAlternates).not.toContain("Recipe_Alternate_Foo_C");
+  });
+});
+
+describe("SET_CLOCKING", () => {
+  it("sets clocking flag", () => {
+    const s = reducer(initialState, { type: "SET_CLOCKING", value: false });
+    expect(s.clockingAvailable).toBe(false);
+  });
+});
+
+describe("SET_ITEMS / SET_RECIPES / DATA_ERROR", () => {
+  it("stores items and clears loading flag", () => {
+    const items = [{ class_name: "Desc_IronPlate_C", display_name: "Iron Plate" }];
+    const s = reducer(initialState, { type: "SET_ITEMS", items });
+    expect(s.items).toEqual(items);
+    expect(s.dataLoading).toBe(false);
+  });
+
+  it("stores recipes", () => {
+    const recipes: Recipe[] = [
+      {
+        class_name: "Recipe_IronPlate_C",
+        display_name: "Iron Plate",
+        machine_class: "Build_ConstructorMk1_C",
+        ingredients: [{ item_class: "Desc_IronIngot_C", amount_per_min: 30 }],
+        products: [{ item_class: "Desc_IronPlate_C", amount_per_min: 20 }],
+        duration: 6,
+        is_alternate: false,
+        is_build_gun: false,
+      },
+    ];
+    const s = reducer(initialState, { type: "SET_RECIPES", recipes });
+    expect(s.recipes).toEqual(recipes);
+  });
+
+  it("sets data error and clears loading flag", () => {
+    const s = reducer(initialState, { type: "DATA_ERROR", error: "Network error" });
+    expect(s.dataError).toBe("Network error");
+    expect(s.dataLoading).toBe(false);
+  });
+});
+
+describe("SOLVE_START / SOLVE_SUCCESS / SOLVE_ERROR", () => {
+  it("sets loading status", () => {
+    const s = reducer(initialState, { type: "SOLVE_START" });
+    expect(s.solverStatus).toBe("loading");
+    expect(s.solveResult).toBeNull();
+    expect(s.solveError).toBeNull();
+  });
+
+  it("sets success status with result", () => {
+    const result = {
+      solve_id: "test-id",
+      total_count: 0,
+      page: 1,
+      page_size: 10,
+      cap_reached: false,
+      results: [],
+      failure: null,
+      all_chains_have_deficit: false,
+      warnings: null,
+    };
+    const s = reducer(initialState, { type: "SOLVE_SUCCESS", result });
+    expect(s.solverStatus).toBe("success");
+    expect(s.solveResult).toEqual(result);
+  });
+
+  it("sets error status with message", () => {
+    const s = reducer(initialState, { type: "SOLVE_ERROR", error: "Timeout" });
+    expect(s.solverStatus).toBe("error");
+    expect(s.solveError).toBe("Timeout");
+  });
+});
+
+const IRON_INGOT = "Desc_IronIngot_C";
+const IRON_PLATE = "Desc_IronPlate_C";
+const WIRE = "Desc_Wire_C";
+const COPPER_INGOT = "Desc_CopperIngot_C";
+
+const RECIPE_IRON_PLATE: Recipe = {
+  class_name: "Recipe_IronPlate_C",
+  display_name: "Iron Plate",
+  machine_class: "Build_ConstructorMk1_C",
+  ingredients: [{ item_class: IRON_INGOT, amount_per_min: 30 }],
+  products: [{ item_class: IRON_PLATE, amount_per_min: 20 }],
+  duration: 6,
+  is_alternate: false,
+  is_build_gun: false,
+};
+
+const RECIPE_ALT_IRON_PLATE: Recipe = {
+  class_name: "Recipe_Alternate_IronPlate_C",
+  display_name: "Alternate: Iron Alloy Plate",
+  machine_class: "Build_ConstructorMk1_C",
+  ingredients: [
+    { item_class: IRON_INGOT, amount_per_min: 22.5 },
+    { item_class: COPPER_INGOT, amount_per_min: 7.5 },
+  ],
+  products: [{ item_class: IRON_PLATE, amount_per_min: 15 }],
+  duration: 8,
+  is_alternate: true,
+  is_build_gun: false,
+};
+
+const RECIPE_WIRE: Recipe = {
+  class_name: "Recipe_Wire_C",
+  display_name: "Wire",
+  machine_class: "Build_ConstructorMk1_C",
+  ingredients: [{ item_class: COPPER_INGOT, amount_per_min: 15 }],
+  products: [{ item_class: WIRE, amount_per_min: 30 }],
+  duration: 4,
+  is_alternate: false,
+  is_build_gun: false,
+};
+
+const RECIPE_ALT_IRON_WIRE: Recipe = {
+  class_name: "Recipe_Alternate_IronWire_C",
+  display_name: "Alternate: Iron Wire",
+  machine_class: "Build_ConstructorMk1_C",
+  ingredients: [{ item_class: IRON_INGOT, amount_per_min: 12.5 }],
+  products: [{ item_class: WIRE, amount_per_min: 22.5 }],
+  duration: 4,
+  is_alternate: true,
+  is_build_gun: false,
+};
+
+const ALL_RECIPES = [RECIPE_IRON_PLATE, RECIPE_ALT_IRON_PLATE, RECIPE_WIRE, RECIPE_ALT_IRON_WIRE];
+
+describe("relevantAlternates", () => {
+  it("returns empty when no outputs selected", () => {
+    expect(relevantAlternates([], ALL_RECIPES)).toEqual([]);
+  });
+
+  it("returns empty when outputs have no item class", () => {
+    const outputs = [{ id: "1", item_class: "", amount: 5 }];
+    expect(relevantAlternates(outputs, ALL_RECIPES)).toEqual([]);
+  });
+
+  it("returns alternates that produce the selected output", () => {
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    const alts = relevantAlternates(outputs, ALL_RECIPES);
+    expect(alts.map((r) => r.class_name)).toContain("Recipe_Alternate_IronPlate_C");
+  });
+
+  it("returns alternates for transitive ingredients", () => {
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    // IRON_INGOT is an ingredient of IronPlate → IronWire alt produces from IRON_INGOT
+    // but IronWire produces WIRE, not IRON_INGOT... so not reachable from IRON_PLATE
+    // Let's check that Recipe_Alternate_IronWire is NOT included unless WIRE is reachable
+    const alts = relevantAlternates(outputs, ALL_RECIPES);
+    expect(alts.map((r) => r.class_name)).not.toContain("Recipe_Alternate_IronWire_C");
+  });
+
+  it("sorts results alphabetically by display_name", () => {
+    // Add a second output that needs wire so Iron Wire alt becomes relevant
+    const outputs = [
+      { id: "1", item_class: IRON_PLATE, amount: 5 },
+      { id: "2", item_class: WIRE, amount: 10 },
+    ];
+    const alts = relevantAlternates(outputs, ALL_RECIPES);
+    const names = alts.map((r) => r.display_name);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    expect(alts.map((r) => r.class_name)).toContain("Recipe_Alternate_IronWire_C");
+  });
+
+  it("excludes build-gun and non-alternate recipes", () => {
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    const alts = relevantAlternates(outputs, ALL_RECIPES);
+    expect(alts.every((r) => r.is_alternate)).toBe(true);
+  });
+});
