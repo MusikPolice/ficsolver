@@ -109,7 +109,7 @@ describe("SET_CLOCKING", () => {
 
 describe("SET_ITEMS / SET_RECIPES / DATA_ERROR", () => {
   it("stores items and clears loading flag", () => {
-    const items = [{ class_name: "Desc_IronPlate_C", display_name: "Iron Plate" }];
+    const items = [{ class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false }];
     const s = reducer(initialState, { type: "SET_ITEMS", items });
     expect(s.items).toEqual(items);
     expect(s.dataLoading).toBe(false);

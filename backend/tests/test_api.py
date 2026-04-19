@@ -42,7 +42,7 @@ def test_list_items_shape(client: TestClient) -> None:
     items = client.get("/items").json()
     rod = next(i for i in items if i["class_name"] == "Desc_ZorblaxRod_C")
     assert rod["display_name"] == "Zorblax Rod"
-    assert set(rod.keys()) == {"class_name", "display_name"}
+    assert set(rod.keys()) == {"class_name", "display_name", "is_raw_resource"}
 
 
 def test_list_recipes_status(client: TestClient) -> None:

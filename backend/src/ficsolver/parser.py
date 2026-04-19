@@ -104,13 +104,17 @@ def _parse_machine_class(produced_in: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _parse_items(classes: list[dict[str, Any]]) -> dict[str, Item]:
+def _parse_items(classes: list[dict[str, Any]], is_raw_resource: bool = False) -> dict[str, Item]:
     items: dict[str, Item] = {}
     for cls in classes:
         class_name: str = cls.get("ClassName", "")
         display_name: str = cls.get("mDisplayName", class_name)
         if class_name:
-            items[class_name] = Item(class_name=class_name, display_name=display_name)
+            items[class_name] = Item(
+                class_name=class_name,
+                display_name=display_name,
+                is_raw_resource=is_raw_resource,
+            )
     return items
 
 
@@ -186,7 +190,8 @@ def parse_game_data(data: list[dict[str, Any]]) -> GameData:
         classes: list[dict[str, Any]] = bucket.get("Classes", [])
 
         if _matches_native_class(native_class, _ITEM_NATIVE_CLASSES):
-            items.update(_parse_items(classes))
+            is_raw = "FGResourceDescriptor" in native_class
+            items.update(_parse_items(classes, is_raw_resource=is_raw))
         elif _RECIPE_NATIVE_CLASS in native_class:
             recipes.extend(_parse_recipes(classes))
         elif _matches_native_class(native_class, _MACHINE_NATIVE_CLASSES):

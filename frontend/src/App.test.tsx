@@ -4,8 +4,8 @@ import App from "./App";
 import type { Item } from "./api/types";
 
 const ITEMS: Item[] = [
-  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot" },
-  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot" },
+  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot", is_raw_resource: false },
+  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot", is_raw_resource: false },
 ];
 
 function mockFetchSequence(responses: [unknown, number?][]): void {

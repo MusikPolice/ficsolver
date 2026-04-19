@@ -5,8 +5,8 @@ import type { Item } from "../api/types";
 import type { ItemEntry } from "../state";
 
 const ITEMS: Item[] = [
-  { class_name: "Desc_ModularFrame_C", display_name: "Modular Frame" },
-  { class_name: "Desc_IronPlate_C", display_name: "Iron Plate" },
+  { class_name: "Desc_ModularFrame_C", display_name: "Modular Frame", is_raw_resource: false },
+  { class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false },
 ];
 
 const ENTRY: ItemEntry = { id: "1", item_class: "Desc_ModularFrame_C", amount: 5 };

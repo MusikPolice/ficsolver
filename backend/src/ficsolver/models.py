@@ -15,6 +15,7 @@ class Item:
 
     class_name: str  # e.g. "Desc_IronPlate_C"
     display_name: str
+    is_raw_resource: bool = False  # True for FGResourceDescriptor items (mineable/extractable)
 
 
 @dataclass

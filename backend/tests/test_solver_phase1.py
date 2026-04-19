@@ -12,7 +12,7 @@ Uses the Zorblax universe fixture.  Key recipe paths:
 
 import pytest
 
-from ficsolver.models import GameData
+from ficsolver.models import GameData, Item, ItemAmount, Recipe
 from ficsolver.parser import parse_game_data
 from ficsolver.solver import Phase1Failure, select_recipes
 from tests.fixtures.game_data import CYCLIC_FIXTURE, FIXTURE
@@ -178,3 +178,141 @@ def test_multiple_desired_outputs(game_data: GameData) -> None:
         produced = {p.item_class for r in sel.recipes.values() for p in r.products}
         assert FRAME in produced
         assert GEAR in produced
+
+
+# ---------------------------------------------------------------------------
+# Raw resource with Converter-style recipe: mine-it branch must appear
+# ---------------------------------------------------------------------------
+
+
+def _make_converter_game_data() -> GameData:
+    """Minimal universe: Ore (raw) → Ingot via smelt; also Ore ← SAM via converter."""
+    ORE = "Desc_Ore_C"
+    INGOT = "Desc_Ingot_C"
+    SAM = "Desc_SAM_C"
+    return GameData(
+        items={
+            ORE: Item(ORE, "Ore", is_raw_resource=True),
+            INGOT: Item(INGOT, "Ingot"),
+            SAM: Item(SAM, "SAM", is_raw_resource=True),
+        },
+        machines={},
+        recipes=[
+            Recipe(
+                class_name="Recipe_Smelt_C",
+                display_name="Smelt",
+                machine_class="Build_Smelter_C",
+                ingredients=[ItemAmount(ORE, 30)],
+                products=[ItemAmount(INGOT, 30)],
+                duration=2,
+                is_alternate=False,
+                is_build_gun=False,
+            ),
+            Recipe(
+                class_name="Recipe_OreFromSAM_C",
+                display_name="Ore from SAM",
+                machine_class="Build_Converter_C",
+                # Standard (non-alternate) recipe — the bug was that this made Ore
+                # no longer treated as a raw resource, hiding the simple mine-it chain.
+                ingredients=[ItemAmount(SAM, 10)],
+                products=[ItemAmount(ORE, 15)],
+                duration=4,
+                is_alternate=False,
+                is_build_gun=False,
+            ),
+        ],
+    )
+
+
+def test_raw_resource_with_converter_also_yields_mine_branch() -> None:
+    """When a raw resource also has a standard Converter recipe producing it,
+    the DFS must yield a branch where it is simply mined (no Converter recipe)
+    in addition to branches where the Converter is used."""
+    gd = _make_converter_game_data()
+    result = select_recipes(["Desc_Ingot_C"], set(), gd)
+    assert result.failure is None
+
+    recipe_sets = [set(sel.recipes.keys()) for sel in result.selections]
+    # Mine-it branch: only the smelt recipe (Ore treated as raw input)
+    assert {"Recipe_Smelt_C"} in recipe_sets
+    # Converter branch: smelt + converter
+    assert {"Recipe_Smelt_C", "Recipe_OreFromSAM_C"} in recipe_sets
+
+
+def test_raw_resource_converter_branch_count() -> None:
+    """Exactly two selections: mine-it and converter."""
+    gd = _make_converter_game_data()
+    result = select_recipes(["Desc_Ingot_C"], set(), gd)
+    assert len(result.selections) == 2
+
+
+# ---------------------------------------------------------------------------
+# Declared available inputs are treated as terminals in the DFS
+# ---------------------------------------------------------------------------
+
+
+def _make_declared_input_game_data() -> GameData:
+    """Minimal universe: Ore (raw) → Ingot (smelt) → Plate (press)."""
+    ORE = "Desc_Ore_C"
+    INGOT = "Desc_Ingot_C"
+    PLATE = "Desc_Plate_C"
+    return GameData(
+        items={
+            ORE: Item(ORE, "Ore", is_raw_resource=True),
+            INGOT: Item(INGOT, "Ingot"),
+            PLATE: Item(PLATE, "Plate"),
+        },
+        machines={},
+        recipes=[
+            Recipe(
+                class_name="Recipe_Smelt_C",
+                display_name="Smelt",
+                machine_class="Build_Smelter_C",
+                ingredients=[ItemAmount(ORE, 30)],
+                products=[ItemAmount(INGOT, 30)],
+                duration=2,
+                is_alternate=False,
+                is_build_gun=False,
+            ),
+            Recipe(
+                class_name="Recipe_Press_C",
+                display_name="Press",
+                machine_class="Build_Constructor_C",
+                ingredients=[ItemAmount(INGOT, 30)],
+                products=[ItemAmount(PLATE, 20)],
+                duration=3,
+                is_alternate=False,
+                is_build_gun=False,
+            ),
+        ],
+    )
+
+
+def test_declared_input_without_any_gives_one_chain() -> None:
+    """Without declared inputs, only the full mine→smelt→press chain exists."""
+    gd = _make_declared_input_game_data()
+    result = select_recipes(["Desc_Plate_C"], set(), gd)
+    assert result.failure is None
+    assert len(result.selections) == 1
+    assert "Recipe_Smelt_C" in result.selections[0].recipes
+
+
+def test_declared_input_adds_skip_recipe_branch() -> None:
+    """Declaring Ingot as an available input adds a branch where Ingot is taken
+    from stock (only Press recipe needed) alongside the full mine+smelt branch."""
+    gd = _make_declared_input_game_data()
+    result = select_recipes(["Desc_Plate_C"], set(), gd, available_inputs={"Desc_Ingot_C"})
+    assert result.failure is None
+
+    recipe_sets = [set(sel.recipes.keys()) for sel in result.selections]
+    # Use-declared-input branch: only the press recipe
+    assert {"Recipe_Press_C"} in recipe_sets
+    # Full chain branch: smelt + press
+    assert {"Recipe_Smelt_C", "Recipe_Press_C"} in recipe_sets
+
+
+def test_declared_input_gives_two_selections() -> None:
+    """Exactly two selections when an intermediate item is declared as available."""
+    gd = _make_declared_input_game_data()
+    result = select_recipes(["Desc_Plate_C"], set(), gd, available_inputs={"Desc_Ingot_C"})
+    assert len(result.selections) == 2

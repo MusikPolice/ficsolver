@@ -59,12 +59,18 @@ def select_recipes(
     unlocked_alternates: set[str],
     game_data: GameData,
     chain_limit: int = 200,
+    available_inputs: set[str] | None = None,
 ) -> Phase1Result:
     """Run Phase 1: enumerate minimal recipe sets via DFS.
 
     Returns one RecipeSelection per valid recipe combination up to chain_limit.
     When no selections are found, returns a Phase1Result with failure set.
+
+    available_inputs: item classes the user has declared as on-hand.  Items in
+    this set are treated like raw resources in the DFS — the solver will offer
+    a branch where they are taken as given rather than produced via recipe.
     """
+    declared: set[str] = available_inputs or set()
     selections: list[RecipeSelection] = []
     cap_reached = False
 
@@ -75,6 +81,7 @@ def select_recipes(
         set(),
         unlocked_alternates,
         game_data,
+        declared,
     ):
         has_cycle = _detect_cycle(raw_selected)
         selections.append(RecipeSelection(raw_selected, has_cycle, byproduct_deps))
@@ -101,6 +108,7 @@ def _dfs(
     processed: set[str],
     unlocked_alternates: set[str],
     game_data: GameData,
+    available_inputs: set[str],
 ) -> Iterator[tuple[dict[str, Recipe], dict[str, str]]]:
     """Yield (selected_recipes, byproduct_deps) for each fully-resolved chain."""
 
@@ -126,27 +134,66 @@ def _dfs(
             new_processed,
             unlocked_alternates,
             game_data,
+            available_inputs,
         )
         return
 
     producers = _get_available_producers(item_class, game_data, unlocked_alternates)
 
+    # Determine whether this item can be treated as a terminal input rather than
+    # always being produced via a recipe.  This is true when the item is a
+    # naturally-occurring raw resource (e.g. Iron Ore — mineable even though
+    # Converter recipes also exist for it) or when the user has declared it as
+    # an available input.
+    item_obj = game_data.items.get(item_class)
+    is_obtainable_as_input = item_class in available_inputs or (
+        item_obj is not None and item_obj.is_raw_resource
+    )
+
     if not producers:
-        if _has_any_producer(item_class, game_data):
-            # Has recipes but none are unlocked — branch is blocked; don't yield.
+        if _has_any_producer(item_class, game_data) and not is_obtainable_as_input:
+            # Has recipes but none are unlocked and it isn't a raw/declared
+            # resource — this branch is blocked; don't yield.
             return
-        # Raw resource (no recipe exists at all) — treat as a given input.
+        # No available producers, or it's a raw/declared resource regardless:
+        # treat as a given input and continue resolving the rest of the chain.
         yield from _dfs(
-            rest, selected, byproduct_deps, new_processed, unlocked_alternates, game_data
+            rest,
+            selected,
+            byproduct_deps,
+            new_processed,
+            unlocked_alternates,
+            game_data,
+            available_inputs,
         )
         return
+
+    # For raw resources and declared inputs that also have producer recipes
+    # (e.g. Iron Ore has Converter recipes), offer a branch where the item is
+    # simply mined / taken from stock rather than produced via recipe.
+    if is_obtainable_as_input:
+        yield from _dfs(
+            rest,
+            selected,
+            byproduct_deps,
+            new_processed,
+            unlocked_alternates,
+            game_data,
+            available_inputs,
+        )
 
     # Branch: one path per available producer recipe.
     for recipe in producers:
         if recipe.class_name in selected:
             # Already selected via another path; don't re-add.
             yield from _dfs(
-                rest, selected, byproduct_deps, new_processed, unlocked_alternates, game_data
+                rest,
+                selected,
+                byproduct_deps,
+                new_processed,
+                unlocked_alternates,
+                game_data,
+                available_inputs,
             )
             continue
 
@@ -161,6 +208,7 @@ def _dfs(
             new_processed,
             unlocked_alternates,
             game_data,
+            available_inputs,
         )
 
 

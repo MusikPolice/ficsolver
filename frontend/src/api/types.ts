@@ -1,6 +1,7 @@
 export interface Item {
   class_name: string;
   display_name: string;
+  is_raw_resource: boolean;
 }
 
 export interface ItemAmount {

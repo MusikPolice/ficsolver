@@ -248,7 +248,12 @@ def solve(request: SolveRequest, game_data: GameDataDep) -> SolveResponse:
     unlocked_alternates = set(request.unlocked_alternates)
 
     # Phase 1: enumerate recipe selections.
-    phase1_result = select_recipes(list(desired_outputs.keys()), unlocked_alternates, game_data)
+    phase1_result = select_recipes(
+        list(desired_outputs.keys()),
+        unlocked_alternates,
+        game_data,
+        available_inputs=set(available_inputs.keys()),
+    )
 
     if phase1_result.failure is not None:
         return SolveResponse(

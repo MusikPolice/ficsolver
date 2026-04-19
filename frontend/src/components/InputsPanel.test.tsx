@@ -5,8 +5,8 @@ import type { Item } from "../api/types";
 import type { ItemEntry } from "../state";
 
 const ITEMS: Item[] = [
-  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot" },
-  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot" },
+  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot", is_raw_resource: false },
+  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot", is_raw_resource: false },
 ];
 
 const ENTRY: ItemEntry = { id: "1", item_class: "Desc_IronIngot_C", amount: 120 };
