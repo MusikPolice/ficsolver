@@ -64,9 +64,22 @@ Three-tier: React/TypeScript frontend → FastAPI backend → game data parser +
 
 | Module | Role |
 |--------|------|
-| `App.tsx` | Root component (placeholder) |
-| `api/types.ts` | TypeScript interfaces mirroring all backend Pydantic models (`Item`, `Recipe`, `SolveRequest`, `SolveResponse`, etc.) |
+| `App.tsx` | Root component; `useReducer` over full app state; wires `handleSolve`, `handleLoadMore`, `handleSortChange` |
+| `state.ts` | `AppState`, `Action` union, `reducer`, `initialState`, `relevantAlternates`; exports `SortKey` type |
+| `api/types.ts` | TypeScript interfaces mirroring all backend Pydantic models (`Item`, `Recipe`, `SolveRequest`, `SolveResponse`, `ChainResultOut`, `BudgetEntryOut`, `SolveFailureOut`, etc.) |
 | `api/client.ts` | Typed fetch-based API client: `getItems`, `getRecipes`, `postSolve`, `getSolveResults` |
+| `components/SettingsPanel.tsx` | Clocking-available toggle |
+| `components/InputsPanel.tsx` | Available inputs form (item + rate rows, add/remove) |
+| `components/OutputsPanel.tsx` | Desired outputs form (max 10, item + rate rows) |
+| `components/AlternatesPanel.tsx` | Alternate recipe checkboxes filtered to relevant outputs, sorted alphabetically |
+| `components/ChainCard.tsx` | Single result card: relative resource bar (shortest = best), ⚠ deficit indicator, machine group list with ceiled clock speeds, implicit outputs, tap-to-expand budget detail table |
+| `components/ResultsView.tsx` | Results container: sort selector, result count, cap-reached notice, chain cards, Load More pagination, Phase 1 and Phase 2 failure cards |
+
+**State shape key fields:**
+- `displayedResults: ChainResultOut[]` — accumulated chains across pages (appended by Load More, replaced by sort change)
+- `currentSort: "resource"` — active sort key
+- `isLoadingMore: boolean` — Load More in flight
+- `solveResult: SolveResponse | null` — latest API response (tracks current page number and solve_id)
 
 The Vite config proxies `/api/*` to the backend at `:8000` during development.
 
