@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getItems, getRecipes, getSolveResults, postSolve } from "./client";
 import type { ChainResultOut, Item, Recipe, SolveResponse } from "./types";
 
-const ITEM: Item = { class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false };
+const ITEM: Item = { class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false, is_fluid: false };
 const RECIPE: Recipe = {
   class_name: "Recipe_IronPlate_C",
   display_name: "Iron Plate",

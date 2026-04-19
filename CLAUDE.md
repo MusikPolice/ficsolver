@@ -49,7 +49,7 @@ Three-tier: React/TypeScript frontend → FastAPI backend → game data parser +
 
 | Module | Role |
 |--------|------|
-| `main.py` | FastAPI app; endpoints `/health`, `/items`, `/recipes`; `get_game_data()` cached via `@lru_cache` |
+| `main.py` | FastAPI app; endpoints `/health`, `/items`, `/recipes`, `POST /solve`, `GET /solve/{solve_id}/results`; `get_game_data()` cached via `@lru_cache`; in-memory solve result cache keyed by UUID |
 | `models.py` | All dataclasses: `Item`, `Recipe`, `Machine`, `GameData`, `SolverChain`, `BudgetComparison`, etc. |
 | `parser.py` | Loads `en-CA.json` (UTF-16 LE with BOM); extracts items/recipes/machines from Unreal Engine NativeClass buckets; converts cycle-based amounts to per-minute rates |
 | `graph.py` | Builds a bipartite directed graph (items ↔ recipes) using NetworkX; build-gun recipes excluded |
@@ -57,7 +57,7 @@ Three-tier: React/TypeScript frontend → FastAPI backend → game data parser +
 
 **Two-phase solver:**
 
-- **Phase 1** — DFS from desired outputs back to raw resources; enumerates minimal recipe sets (limit 200) handling alternates, byproduct routing, and cycle detection. Returns `Phase1Result` containing `list[RecipeSelection]`.
+- **Phase 1** — DFS from desired outputs back to raw resources; enumerates minimal recipe sets (limit 200) handling alternates, byproduct routing, and cycle detection. Branches that would produce a declared available input are pruned (the input is treated as a raw resource). Supports `exclude_converter_recipes` to drop all Converter-building branches. Returns `Phase1Result` containing `list[RecipeSelection]`.
 - **Phase 2** — For each `RecipeSelection`, solves production rates via back-substitution (acyclic chains) or `numpy.linalg.lstsq` (cyclic chains). Derives machine counts and clock speeds. Runs budget comparison against declared available inputs. Returns `SolverChain` with machine groups and a `BudgetComparison` per item.
 
 ### Frontend (`frontend/src/`)
@@ -68,7 +68,7 @@ Three-tier: React/TypeScript frontend → FastAPI backend → game data parser +
 | `state.ts` | `AppState`, `Action` union, `reducer`, `initialState`, `relevantAlternates`; exports `SortKey` type |
 | `api/types.ts` | TypeScript interfaces mirroring all backend Pydantic models (`Item`, `Recipe`, `SolveRequest`, `SolveResponse`, `ChainResultOut`, `BudgetEntryOut`, `SolveFailureOut`, etc.) |
 | `api/client.ts` | Typed fetch-based API client: `getItems`, `getRecipes`, `postSolve`, `getSolveResults` |
-| `components/SettingsPanel.tsx` | Clocking-available toggle |
+| `components/SettingsPanel.tsx` | Clocking-available toggle and Exclude Converter recipes toggle |
 | `components/InputsPanel.tsx` | Available inputs form (item + rate rows, add/remove) |
 | `components/OutputsPanel.tsx` | Desired outputs form (max 10, item + rate rows) |
 | `components/AlternatesPanel.tsx` | Alternate recipe checkboxes filtered to relevant outputs, sorted alphabetically |
@@ -80,6 +80,7 @@ Three-tier: React/TypeScript frontend → FastAPI backend → game data parser +
 - `currentSort: "resource"` — active sort key
 - `isLoadingMore: boolean` — Load More in flight
 - `solveResult: SolveResponse | null` — latest API response (tracks current page number and solve_id)
+- `excludeConverterRecipes: boolean` — when true, `POST /solve` sets `exclude_converter_recipes`; toggled via `SET_EXCLUDE_CONVERTER` action
 
 The Vite config proxies `/api/*` to the backend at `:8000` during development.
 

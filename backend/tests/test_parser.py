@@ -219,6 +219,87 @@ def test_recipe_count(game_data: GameData) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Fluid item amounts — ÷1000 correction
+# ---------------------------------------------------------------------------
+
+_FLUID_FIXTURE: list[dict] = [
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGItemDescriptor'",
+        "Classes": [
+            # Liquid ingredient (mForm=RF_LIQUID): Amount=3000 in data → 3 m³/cycle → 30 m³/min
+            {"ClassName": "Desc_FluidA_C", "mDisplayName": "Fluid A", "mForm": "RF_LIQUID"},
+            # Gas product (mForm=RF_GAS): Amount=1000 in data → 1 m³/cycle → 10 m³/min
+            {"ClassName": "Desc_GasB_C", "mDisplayName": "Gas B", "mForm": "RF_GAS"},
+            # Solid control (no mForm): Amount=2 → 2/cycle → 20/min
+            {"ClassName": "Desc_SolidC_C", "mDisplayName": "Solid C"},
+        ],
+    },
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGBuildableManufacturer'",
+        "Classes": [{"ClassName": "Build_Refinery_C", "mDisplayName": "Refinery"}],
+    },
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGRecipe'",
+        "Classes": [
+            {
+                "ClassName": "Recipe_FluidTest_C",
+                "mDisplayName": "Fluid Test",
+                # 3000 mL of FluidA → 2 SolidC + 1000 mL of GasB  (duration 6 s)
+                "mIngredients": (
+                    "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'"
+                    "/Game/FicSolverGame/Resource/Parts/FluidA/Desc_FluidA.Desc_FluidA_C'\","
+                    "Amount=3000)"
+                ),
+                "mProduct": (
+                    "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'"
+                    "/Game/FicSolverGame/Resource/Parts/SolidC/Desc_SolidC.Desc_SolidC_C'\","
+                    "Amount=2),"
+                    "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'"
+                    "/Game/FicSolverGame/Resource/Parts/GasB/Desc_GasB.Desc_GasB_C'\","
+                    "Amount=1000)"
+                ),
+                "mManufactoringDuration": "6.000000",
+                "mProducedIn": (
+                    '("/Game/FicSolverGame/Buildable/Factory/Refinery/Build_Refinery.Build_Refinery_C")'
+                ),
+            }
+        ],
+    },
+]
+
+
+def test_fluid_item_is_marked(tmp_path: pytest.TempPathFactory) -> None:
+    gd = parse_game_data(_FLUID_FIXTURE)
+    assert gd.items["Desc_FluidA_C"].is_fluid is True
+    assert gd.items["Desc_GasB_C"].is_fluid is True
+    assert gd.items["Desc_SolidC_C"].is_fluid is False
+
+
+def test_fluid_ingredient_rate_divided_by_1000(tmp_path: pytest.TempPathFactory) -> None:
+    """Amount=3000 for a liquid ingredient at 6 s cycle → 30 m³/min (not 30 000)."""
+    gd = parse_game_data(_FLUID_FIXTURE)
+    recipe = next(r for r in gd.recipes if r.class_name == "Recipe_FluidTest_C")
+    ing = next(i for i in recipe.ingredients if i.item_class == "Desc_FluidA_C")
+    assert ing.amount_per_min == pytest.approx(30.0)
+
+
+def test_gas_product_rate_divided_by_1000(tmp_path: pytest.TempPathFactory) -> None:
+    """Amount=1000 for a gas product at 6 s cycle → 10 m³/min (not 10 000)."""
+    gd = parse_game_data(_FLUID_FIXTURE)
+    recipe = next(r for r in gd.recipes if r.class_name == "Recipe_FluidTest_C")
+    prod = next(p for p in recipe.products if p.item_class == "Desc_GasB_C")
+    assert prod.amount_per_min == pytest.approx(10.0)
+
+
+def test_solid_product_rate_unchanged(tmp_path: pytest.TempPathFactory) -> None:
+    """Solid item Amount=2 at 6 s cycle → 20/min (no ÷1000)."""
+    gd = parse_game_data(_FLUID_FIXTURE)
+    recipe = next(r for r in gd.recipes if r.class_name == "Recipe_FluidTest_C")
+    prod = next(p for p in recipe.products if p.item_class == "Desc_SolidC_C")
+    assert prod.amount_per_min == pytest.approx(20.0)
+
+
+# ---------------------------------------------------------------------------
 # load_game_data — file I/O and encoding
 # ---------------------------------------------------------------------------
 

@@ -4,9 +4,9 @@ import ItemCombobox from "./ItemCombobox";
 import type { Item } from "../api/types";
 
 const ITEMS: Item[] = [
-  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot", is_raw_resource: false },
-  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot", is_raw_resource: false },
-  { class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false },
+  { class_name: "Desc_IronIngot_C", display_name: "Iron Ingot", is_raw_resource: false, is_fluid: false },
+  { class_name: "Desc_CopperIngot_C", display_name: "Copper Ingot", is_raw_resource: false, is_fluid: false },
+  { class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false, is_fluid: false },
 ];
 
 describe("ItemCombobox", () => {

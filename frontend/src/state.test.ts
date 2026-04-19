@@ -107,9 +107,24 @@ describe("SET_CLOCKING", () => {
   });
 });
 
+describe("SET_EXCLUDE_CONVERTER", () => {
+  it("defaults to false", () => {
+    expect(initialState.excludeConverterRecipes).toBe(false);
+  });
+  it("sets excludeConverterRecipes to true", () => {
+    const s = reducer(initialState, { type: "SET_EXCLUDE_CONVERTER", value: true });
+    expect(s.excludeConverterRecipes).toBe(true);
+  });
+  it("sets excludeConverterRecipes back to false", () => {
+    const withTrue = reducer(initialState, { type: "SET_EXCLUDE_CONVERTER", value: true });
+    const s = reducer(withTrue, { type: "SET_EXCLUDE_CONVERTER", value: false });
+    expect(s.excludeConverterRecipes).toBe(false);
+  });
+});
+
 describe("SET_ITEMS / SET_RECIPES / DATA_ERROR", () => {
   it("stores items and clears loading flag", () => {
-    const items = [{ class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false }];
+    const items = [{ class_name: "Desc_IronPlate_C", display_name: "Iron Plate", is_raw_resource: false, is_fluid: false }];
     const s = reducer(initialState, { type: "SET_ITEMS", items });
     expect(s.items).toEqual(items);
     expect(s.dataLoading).toBe(false);

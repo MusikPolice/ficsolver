@@ -16,6 +16,7 @@ class Item:
     class_name: str  # e.g. "Desc_IronPlate_C"
     display_name: str
     is_raw_resource: bool = False  # True for FGResourceDescriptor items (mineable/extractable)
+    is_fluid: bool = False  # True for RF_LIQUID / RF_GAS; game data stores their amounts x1000
 
 
 @dataclass

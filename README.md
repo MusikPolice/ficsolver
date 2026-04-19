@@ -8,6 +8,7 @@ A web-based factory chain planning tool for the game [Satisfactory](https://www.
 - **Calculate quantities** — solves production rates, machine counts, and clock speeds for each chain using linear algebra; handles cyclic dependencies (e.g. aluminium water recycling)
 - **Budget comparison** — compares each chain's raw resource consumption against your declared inputs and reports per-resource surplus or deficit
 - **Results ranked by efficiency** — cards sorted by total resource consumption, shortest bar = most efficient; load more pages without losing previously reviewed cards
+- **Converter filter** — optionally exclude Converter-building (SAM-based) recipes so results only use standard production paths
 - **Failure explanations** — when no chain exists or all chains exceed your budget, the tool explains why and what's missing
 
 ## Requirements
@@ -196,6 +197,7 @@ The solver accepts:
   "inputs": { "Desc_IronIngot_C": 340 },
   "outputs": { "Desc_ModularFrame_C": 5 },
   "unlocked_alternates": ["Recipe_Alternate_IronWire_C"],
-  "clocking_available": true
+  "clocking_available": true,
+  "exclude_converter_recipes": false
 }
 ```

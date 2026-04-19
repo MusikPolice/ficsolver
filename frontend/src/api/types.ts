@@ -2,6 +2,7 @@ export interface Item {
   class_name: string;
   display_name: string;
   is_raw_resource: boolean;
+  is_fluid: boolean;
 }
 
 export interface ItemAmount {
@@ -70,6 +71,7 @@ export interface SolveRequest {
   outputs: Record<string, number>;
   unlocked_alternates?: string[];
   clocking_available?: boolean;
+  exclude_converter_recipes?: boolean;
   page_size?: number;
 }
 

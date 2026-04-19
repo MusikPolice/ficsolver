@@ -82,12 +82,21 @@ def _matches_native_class(native_class: str, names: frozenset[str]) -> bool:
     return any(name in native_class for name in names)
 
 
-def _parse_item_amounts(encoded: str, duration_sec: float) -> list[ItemAmount]:
-    """Return per-minute ``ItemAmount`` entries from an encoded property string."""
+def _parse_item_amounts(
+    encoded: str, duration_sec: float, fluid_classes: frozenset[str]
+) -> list[ItemAmount]:
+    """Return per-minute ``ItemAmount`` entries from an encoded property string.
+
+    Liquid and gas amounts in en-CA.json are stored at x1000 scale (millilitres /
+    millicubic-metres) relative to the m³ values shown in-game.  Divide those by
+    1000 before converting to per-minute rates.
+    """
     results: list[ItemAmount] = []
     for match in _ITEM_AMOUNT_RE.finditer(encoded):
         class_name = match.group(1)
         cycle_amount = float(match.group(2))
+        if class_name in fluid_classes:
+            cycle_amount /= 1000.0
         rate_per_min = cycle_amount * 60.0 / duration_sec
         results.append(ItemAmount(item_class=class_name, amount_per_min=rate_per_min))
     return results
@@ -109,11 +118,13 @@ def _parse_items(classes: list[dict[str, Any]], is_raw_resource: bool = False) -
     for cls in classes:
         class_name: str = cls.get("ClassName", "")
         display_name: str = cls.get("mDisplayName", class_name)
+        mform: str = cls.get("mForm", "")
         if class_name:
             items[class_name] = Item(
                 class_name=class_name,
                 display_name=display_name,
                 is_raw_resource=is_raw_resource,
+                is_fluid=mform in ("RF_LIQUID", "RF_GAS"),
             )
     return items
 
@@ -128,7 +139,7 @@ def _parse_machines(classes: list[dict[str, Any]]) -> dict[str, Machine]:
     return machines
 
 
-def _parse_recipes(classes: list[dict[str, Any]]) -> list[Recipe]:
+def _parse_recipes(classes: list[dict[str, Any]], fluid_classes: frozenset[str]) -> list[Recipe]:
     recipes: list[Recipe] = []
     for cls in classes:
         class_name: str = cls.get("ClassName", "")
@@ -153,8 +164,8 @@ def _parse_recipes(classes: list[dict[str, Any]]) -> list[Recipe]:
         machine_class = _parse_machine_class(produced_in)
 
         if duration > 0:
-            ingredients = _parse_item_amounts(raw_ingredients, duration)
-            products = _parse_item_amounts(raw_products, duration)
+            ingredients = _parse_item_amounts(raw_ingredients, duration, fluid_classes)
+            products = _parse_item_amounts(raw_products, duration, fluid_classes)
         else:
             ingredients = []
             products = []
@@ -180,11 +191,16 @@ def _parse_recipes(classes: list[dict[str, Any]]) -> list[Recipe]:
 
 
 def parse_game_data(data: list[dict[str, Any]]) -> GameData:
-    """Parse a decoded en-CA.json array into a :class:`GameData` instance."""
+    """Parse a decoded en-CA.json array into a :class:`GameData` instance.
+
+    Items are parsed first so that fluid item classes are known before recipes
+    are parsed (recipe amounts for fluids must be divided by 1000).
+    """
     items: dict[str, Item] = {}
     machines: dict[str, Machine] = {}
     recipes: list[Recipe] = []
 
+    # First pass: items and machines (needed to identify fluids before recipes).
     for bucket in data:
         native_class: str = bucket.get("NativeClass", "")
         classes: list[dict[str, Any]] = bucket.get("Classes", [])
@@ -192,10 +208,17 @@ def parse_game_data(data: list[dict[str, Any]]) -> GameData:
         if _matches_native_class(native_class, _ITEM_NATIVE_CLASSES):
             is_raw = "FGResourceDescriptor" in native_class
             items.update(_parse_items(classes, is_raw_resource=is_raw))
-        elif _RECIPE_NATIVE_CLASS in native_class:
-            recipes.extend(_parse_recipes(classes))
         elif _matches_native_class(native_class, _MACHINE_NATIVE_CLASSES):
             machines.update(_parse_machines(classes))
+
+    fluid_classes: frozenset[str] = frozenset(cn for cn, it in items.items() if it.is_fluid)
+
+    # Second pass: recipes, now that fluid item classes are known.
+    for bucket in data:
+        native_class = bucket.get("NativeClass", "")
+        classes = bucket.get("Classes", [])
+        if _RECIPE_NATIVE_CLASS in native_class:
+            recipes.extend(_parse_recipes(classes, fluid_classes))
 
     return GameData(items=items, machines=machines, recipes=recipes)
 
