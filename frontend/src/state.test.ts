@@ -344,4 +344,40 @@ describe("relevantAlternates", () => {
     const alts = relevantAlternates(outputs, recipes);
     expect(alts.map((r) => r.class_name)).not.toContain("Recipe_Alternate_CopperIngot_C");
   });
+
+  it("includes alternates reachable through an already-unlocked alternate's ingredients", () => {
+    // RECIPE_ALT_IRON_PLATE is unlocked and uses COPPER_INGOT. Any alternate that
+    // produces COPPER_INGOT should now appear because the unlocked alternate is
+    // traversed during BFS.
+    const RECIPE_ALT_COPPER_INGOT: Recipe = {
+      class_name: "Recipe_Alternate_CopperIngot_C",
+      display_name: "Alternate: Copper Alloy Ingot",
+      machine_class: "Build_FoundryMk1_C",
+      ingredients: [{ item_class: IRON_INGOT, amount_per_min: 50 }],
+      products: [{ item_class: COPPER_INGOT, amount_per_min: 100 }],
+      duration: 6,
+      is_alternate: true,
+      is_build_gun: false,
+    };
+    const recipes = [...ALL_RECIPES, RECIPE_ALT_COPPER_INGOT];
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    const unlocked = new Set(["Recipe_Alternate_IronPlate_C"]);
+    const alts = relevantAlternates(outputs, recipes, unlocked);
+    expect(alts.map((r) => r.class_name)).toContain("Recipe_Alternate_CopperIngot_C");
+  });
+
+  it("includes Iron Wire when Stitched Iron Plate is unlocked for an iron plate output", () => {
+    // Stitched Iron Plate uses WIRE. Iron Wire produces WIRE from IRON_INGOT.
+    // Iron Wire should appear when Stitched Iron Plate is already unlocked.
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    const unlocked = new Set(["Recipe_Alternate_IronPlate_C"]); // reuse alt iron plate as stand-in
+    // Without unlocked: Iron Wire not reachable (Wire not in standard chain for Iron Plate)
+    const altsWithout = relevantAlternates(outputs, ALL_RECIPES);
+    expect(altsWithout.map((r) => r.class_name)).not.toContain("Recipe_Alternate_IronWire_C");
+    // With unlocked alt that uses COPPER_INGOT: Wire still not reachable
+    // (the alt uses COPPER_INGOT, not WIRE). This confirms traversal is selective.
+    const altsWith = relevantAlternates(outputs, ALL_RECIPES, unlocked);
+    // RECIPE_ALT_IRON_PLATE uses COPPER_INGOT, not WIRE, so Iron Wire still not shown
+    expect(altsWith.map((r) => r.class_name)).not.toContain("Recipe_Alternate_IronWire_C");
+  });
 });

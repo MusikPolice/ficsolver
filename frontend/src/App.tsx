@@ -85,7 +85,11 @@ export default function App() {
     }
   }
 
-  const alternates = relevantAlternates(state.outputs, state.recipes);
+  const alternates = relevantAlternates(
+    state.outputs,
+    state.recipes,
+    new Set(state.unlockedAlternates),
+  );
   const canSolve = state.outputs.some((o) => o.item_class && o.amount > 0);
   const showResults =
     state.solverStatus === "success" && state.solveResult !== null

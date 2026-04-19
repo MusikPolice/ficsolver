@@ -517,6 +517,34 @@ class TestPhase2Failure:
 # ===========================================================================
 
 
+class TestDegenerateConverterCycle:
+    """Cyclic converter chains that produce negative lstsq rates must be rejected."""
+
+    def test_converter_cycle_returns_phase2_failure(self) -> None:
+        """A → B → C → A converter cycle has no non-negative solution and must fail."""
+        # A→B, B→C, C→A form a pure cycle.  With a desired output of D produced
+        # by another recipe that also needs A, lstsq can give negative rates.
+        recipe_a_to_b = _make_recipe("R_AB", [("Desc_A_C", 10.0)], [("Desc_B_C", 10.0)])
+        recipe_b_to_c = _make_recipe("R_BC", [("Desc_B_C", 10.0)], [("Desc_C_C", 10.0)])
+        recipe_c_to_a = _make_recipe("R_CA", [("Desc_C_C", 10.0)], [("Desc_A_C", 10.0)])
+        recipe_a_to_d = _make_recipe("R_AD", [("Desc_A_C", 10.0)], [("Desc_D_C", 10.0)])
+        gd = _make_game_data(
+            [recipe_a_to_b, recipe_b_to_c, recipe_c_to_a, recipe_a_to_d],
+            raw_items=[],
+        )
+        sel = RecipeSelection(
+            recipes={
+                "R_AB": recipe_a_to_b,
+                "R_BC": recipe_b_to_c,
+                "R_CA": recipe_c_to_a,
+                "R_AD": recipe_a_to_d,
+            },
+            has_cycle=True,
+        )
+        result = calculate_quantities(sel, {"Desc_D_C": 10.0}, True, gd)
+        assert isinstance(result, Phase2Failure)
+
+
 class TestEdgeCases:
     def test_empty_selection_returns_empty_chain(self) -> None:
         gd = _game_data()

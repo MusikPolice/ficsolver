@@ -177,7 +177,11 @@ export function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-export function relevantAlternates(outputs: ItemEntry[], recipes: Recipe[]): Recipe[] {
+export function relevantAlternates(
+  outputs: ItemEntry[],
+  recipes: Recipe[],
+  unlockedAlternates: ReadonlySet<string> = new Set(),
+): Recipe[] {
   const outputClasses = outputs.map((o) => o.item_class).filter(Boolean);
   if (outputClasses.length === 0) return [];
 
@@ -188,7 +192,11 @@ export function relevantAlternates(outputs: ItemEntry[], recipes: Recipe[]): Rec
     const item = queue.shift();
     if (item === undefined) break;
     for (const recipe of recipes) {
-      if (!recipe.is_alternate && recipe.products.some((p) => p.item_class === item)) {
+      // Traverse standard recipes and already-unlocked alternates to find what
+      // ingredients are reachable from the desired outputs.
+      const shouldTraverse =
+        !recipe.is_alternate || unlockedAlternates.has(recipe.class_name);
+      if (shouldTraverse && recipe.products.some((p) => p.item_class === item)) {
         for (const ing of recipe.ingredients) {
           if (!reachable.has(ing.item_class)) {
             reachable.add(ing.item_class);

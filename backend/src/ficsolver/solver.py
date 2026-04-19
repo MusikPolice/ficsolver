@@ -603,6 +603,15 @@ def _solve_with_numpy(
             "", "Degenerate cycle in production chain — inconsistent balance equations."
         )
 
+    # Reject solutions with negative recipe rates — these arise from degenerate
+    # converter cycles (e.g. CopperOre → CateriumOre → Bauxite → RawQuartz →
+    # CopperOre) where lstsq finds an infinite family of solutions and returns a
+    # minimum-norm one that is physically meaningless.
+    if any(float(xi) < -1e-6 for xi in x):
+        return Phase2Failure(
+            "", "Cyclic recipe chain produces negative rates — degenerate converter cycle."
+        )
+
     return {recipe.class_name: float(x[j]) for j, recipe in enumerate(recipes)}
 
 
