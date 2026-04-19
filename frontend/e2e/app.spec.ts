@@ -1,4 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Select an item via the searchable combobox. */
+async function selectItem(page: Page, ariaLabel: string, displayName: string) {
+  const input = page.getByLabel(ariaLabel);
+  await input.fill(displayName);
+  await page.getByRole("listitem").filter({ hasText: displayName }).first().click();
+}
 
 test.describe("page load", () => {
   test("shows app title", async ({ page }) => {
@@ -17,37 +24,50 @@ test.describe("page load", () => {
   });
 });
 
-test.describe("item dropdowns", () => {
-  test("input dropdown is populated with game items", async ({ page }) => {
+test.describe("item comboboxes", () => {
+  test("input combobox filters items by typed text", async ({ page }) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.getByText(/\+ add input/i).click();
 
-    const select = page.getByLabel("Input item");
-    await expect(select).toBeVisible();
+    const input = page.getByLabel("Input item");
+    await expect(input).toBeVisible();
+    await input.fill("iron");
 
-    const options = select.locator("option");
-    const count = await options.count();
-    expect(count).toBeGreaterThan(1); // more than just "Select item..."
+    // At least one match should appear in the dropdown
+    await expect(page.getByRole("listitem").first()).toBeVisible();
   });
 
-  test("output dropdown is populated with game items", async ({ page }) => {
+  test("output combobox filters items by typed text", async ({ page }) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.getByText(/\+ add output/i).click();
 
-    const select = page.getByLabel("Output item");
-    await expect(select).toBeVisible();
+    const input = page.getByLabel("Output item");
+    await expect(input).toBeVisible();
+    await input.fill("iron");
 
-    const options = select.locator("option");
-    const count = await options.count();
-    expect(count).toBeGreaterThan(1);
+    await expect(page.getByRole("listitem").first()).toBeVisible();
   });
 
   test("Iron Plate is available as an output", async ({ page }) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.getByText(/\+ add output/i).click();
 
-    const select = page.getByLabel("Output item");
-    await expect(select.locator("option", { hasText: /^Iron Plate$/ })).toBeAttached();
+    await page.getByLabel("Output item").fill("Iron Plate");
+    await expect(page.getByRole("listitem").filter({ hasText: /^Iron Plate$/ })).toBeVisible();
+  });
+
+  test("typing shows only matching items", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await page.getByText(/\+ add output/i).click();
+
+    await page.getByLabel("Output item").fill("Wire");
+    const items = page.getByRole("listitem");
+    await expect(items.filter({ hasText: /^Wire$/ })).toBeVisible();
+    await expect(items.filter({ hasText: /^Iron Plate$/ })).not.toBeVisible();
   });
 });
 
@@ -59,10 +79,10 @@ test.describe("solve flow", () => {
 
   test("Solve button enables after selecting an output with a rate", async ({ page }) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.getByText(/\+ add output/i).click();
 
-    const select = page.getByLabel("Output item");
-    await select.selectOption({ label: "Iron Plate" });
+    await selectItem(page, "Output item", "Iron Plate");
 
     const rateInput = page.getByLabel("Output rate per minute");
     await rateInput.fill("10");
@@ -72,13 +92,13 @@ test.describe("solve flow", () => {
 
   test("solving Iron Plate returns at least one result chain", async ({ page }) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.getByText(/\+ add output/i).click();
 
-    await page.getByLabel("Output item").selectOption({ label: "Iron Plate" });
+    await selectItem(page, "Output item", "Iron Plate");
     await page.getByLabel("Output rate per minute").fill("10");
     await page.getByRole("button", { name: /solve/i }).click();
 
-    // Wait for the results count to appear, e.g. "(1 of 3)"
     await expect(page.getByText(/\(\d+ of \d+\)/)).toBeVisible({ timeout: 15000 });
   });
 });

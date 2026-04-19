@@ -55,12 +55,11 @@ describe("OutputsPanel", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "REMOVE_OUTPUT", id: "1" });
   });
 
-  it("dispatches UPDATE_OUTPUT_CLASS when item selected", () => {
+  it("dispatches UPDATE_OUTPUT_CLASS when item selected from dropdown", () => {
     const dispatch = vi.fn();
     render(<OutputsPanel outputs={[ENTRY]} items={ITEMS} dispatch={dispatch} />);
-    fireEvent.change(screen.getByLabelText("Output item"), {
-      target: { value: "Desc_IronPlate_C" },
-    });
+    fireEvent.change(screen.getByLabelText("Output item"), { target: { value: "Iron" } });
+    fireEvent.click(screen.getByText("Iron Plate"));
     expect(dispatch).toHaveBeenCalledWith({
       type: "UPDATE_OUTPUT_CLASS",
       id: "1",

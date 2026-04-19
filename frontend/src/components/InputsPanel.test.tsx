@@ -23,10 +23,11 @@ describe("InputsPanel", () => {
     expect(screen.getByLabelText("Input rate per minute")).toBeInTheDocument();
   });
 
-  it("shows item options in select", () => {
+  it("shows matching items in combobox dropdown when typing", () => {
     render(<InputsPanel inputs={[ENTRY]} items={ITEMS} dispatch={vi.fn()} />);
-    expect(screen.getByRole("option", { name: "Iron Ingot" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Copper Ingot" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Input item"), { target: { value: "ingot" } });
+    expect(screen.getByText("Iron Ingot")).toBeInTheDocument();
+    expect(screen.getByText("Copper Ingot")).toBeInTheDocument();
   });
 
   it("dispatches ADD_INPUT when Add input clicked", () => {
@@ -43,12 +44,11 @@ describe("InputsPanel", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "REMOVE_INPUT", id: "1" });
   });
 
-  it("dispatches UPDATE_INPUT_CLASS when item selected", () => {
+  it("dispatches UPDATE_INPUT_CLASS when item selected from dropdown", () => {
     const dispatch = vi.fn();
     render(<InputsPanel inputs={[ENTRY]} items={ITEMS} dispatch={dispatch} />);
-    fireEvent.change(screen.getByLabelText("Input item"), {
-      target: { value: "Desc_CopperIngot_C" },
-    });
+    fireEvent.change(screen.getByLabelText("Input item"), { target: { value: "Copper" } });
+    fireEvent.click(screen.getByText("Copper Ingot"));
     expect(dispatch).toHaveBeenCalledWith({
       type: "UPDATE_INPUT_CLASS",
       id: "1",

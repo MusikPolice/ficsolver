@@ -1,6 +1,7 @@
 import type { Dispatch } from "react";
 import type { Item } from "../api/types";
 import type { Action, ItemEntry } from "../state";
+import ItemCombobox from "./ItemCombobox";
 
 interface Props {
   inputs: ItemEntry[];
@@ -18,25 +19,14 @@ export default function InputsPanel({ inputs, items, loading = false, dispatch }
       <div className="space-y-2">
         {inputs.map((entry) => (
           <div key={entry.id} className="flex gap-2 items-center">
-            <select
-              aria-label="Input item"
+            <ItemCombobox
+              ariaLabel="Input item"
               value={entry.item_class}
-              onChange={(e) =>
-                dispatch({
-                  type: "UPDATE_INPUT_CLASS",
-                  id: entry.id,
-                  item_class: e.target.value,
-                })
+              items={items}
+              onChange={(item_class) =>
+                dispatch({ type: "UPDATE_INPUT_CLASS", id: entry.id, item_class })
               }
-              className="flex-1 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm min-w-0"
-            >
-              <option value="">Select item…</option>
-              {items.map((item) => (
-                <option key={item.class_name} value={item.class_name}>
-                  {item.display_name}
-                </option>
-              ))}
-            </select>
+            />
             <input
               type="number"
               aria-label="Input rate per minute"
