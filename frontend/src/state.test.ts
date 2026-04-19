@@ -324,4 +324,24 @@ describe("relevantAlternates", () => {
     const alts = relevantAlternates(outputs, ALL_RECIPES);
     expect(alts.every((r) => r.is_alternate)).toBe(true);
   });
+
+  it("does not include alternates reachable only through another alternate's ingredients", () => {
+    // COPPER_INGOT is only introduced as an ingredient of RECIPE_ALT_IRON_PLATE (an alternate).
+    // Any alternate whose product is COPPER_INGOT should NOT appear when asking for IRON_PLATE,
+    // because the BFS must only traverse standard recipes to build the reachable set.
+    const RECIPE_ALT_COPPER_INGOT: Recipe = {
+      class_name: "Recipe_Alternate_CopperIngot_C",
+      display_name: "Alternate: Copper Alloy Ingot",
+      machine_class: "Build_FoundryMk1_C",
+      ingredients: [{ item_class: IRON_INGOT, amount_per_min: 50 }],
+      products: [{ item_class: COPPER_INGOT, amount_per_min: 100 }],
+      duration: 6,
+      is_alternate: true,
+      is_build_gun: false,
+    };
+    const recipes = [...ALL_RECIPES, RECIPE_ALT_COPPER_INGOT];
+    const outputs = [{ id: "1", item_class: IRON_PLATE, amount: 5 }];
+    const alts = relevantAlternates(outputs, recipes);
+    expect(alts.map((r) => r.class_name)).not.toContain("Recipe_Alternate_CopperIngot_C");
+  });
 });

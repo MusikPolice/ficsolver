@@ -188,7 +188,7 @@ export function relevantAlternates(outputs: ItemEntry[], recipes: Recipe[]): Rec
     const item = queue.shift();
     if (item === undefined) break;
     for (const recipe of recipes) {
-      if (recipe.products.some((p) => p.item_class === item)) {
+      if (!recipe.is_alternate && recipe.products.some((p) => p.item_class === item)) {
         for (const ing of recipe.ingredients) {
           if (!reachable.has(ing.item_class)) {
             reachable.add(ing.item_class);
