@@ -40,7 +40,7 @@ export default function AlternatesPanel({ alternates, unlockedAlternates, dispat
                 }
                 className="accent-blue-500"
               />
-              <span className="text-sm text-gray-200">{recipe.display_name}</span>
+              <span className="text-sm text-gray-200">{recipe.display_name.replace(/^Alternate:\s*/i, "")}</span>
             </label>
           );
         })}

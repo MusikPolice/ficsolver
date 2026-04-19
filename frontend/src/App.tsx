@@ -105,13 +105,13 @@ export default function App() {
           <p className="text-sm text-red-400">Failed to load game data: {state.dataError}</p>
         )}
         <SettingsPanel clockingAvailable={state.clockingAvailable} dispatch={dispatch} />
-        <InputsPanel inputs={state.inputs} items={state.items} loading={state.dataLoading} dispatch={dispatch} />
         <OutputsPanel outputs={state.outputs} items={state.items} loading={state.dataLoading} dispatch={dispatch} />
         <AlternatesPanel
           alternates={alternates}
           unlockedAlternates={state.unlockedAlternates}
           dispatch={dispatch}
         />
+        <InputsPanel inputs={state.inputs} items={state.items} loading={state.dataLoading} dispatch={dispatch} />
         <button
           type="button"
           onClick={() => void handleSolve()}

@@ -30,7 +30,7 @@ describe("AlternatesPanel", () => {
         dispatch={vi.fn()}
       />,
     );
-    expect(screen.getByText("Alternate: Iron Wire")).toBeInTheDocument();
+    expect(screen.getByText("Iron Wire")).toBeInTheDocument();
     expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
 
