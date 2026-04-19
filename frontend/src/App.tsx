@@ -41,6 +41,7 @@ export default function App() {
         outputs,
         unlocked_alternates: state.unlockedAlternates,
         clocking_available: state.clockingAvailable,
+        exclude_converter_recipes: state.excludeConverterRecipes || undefined,
       });
       dispatch({ type: "SOLVE_SUCCESS", result });
     } catch (err: unknown) {
@@ -108,7 +109,11 @@ export default function App() {
         {state.dataError && (
           <p className="text-sm text-red-400">Failed to load game data: {state.dataError}</p>
         )}
-        <SettingsPanel clockingAvailable={state.clockingAvailable} dispatch={dispatch} />
+        <SettingsPanel
+          clockingAvailable={state.clockingAvailable}
+          excludeConverterRecipes={state.excludeConverterRecipes}
+          dispatch={dispatch}
+        />
         <OutputsPanel outputs={state.outputs} items={state.items} loading={state.dataLoading} dispatch={dispatch} />
         <AlternatesPanel
           alternates={alternates}

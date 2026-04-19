@@ -246,6 +246,31 @@ def test_raw_resource_converter_branch_count() -> None:
     assert len(result.selections) == 2
 
 
+def test_exclude_converter_recipes_removes_converter_branch() -> None:
+    """With exclude_converter_recipes=True, only the mine-it branch is returned."""
+    gd = _make_converter_game_data()
+    result = select_recipes(["Desc_Ingot_C"], set(), gd, exclude_converter_recipes=True)
+    assert result.failure is None
+
+    recipe_sets = [set(sel.recipes.keys()) for sel in result.selections]
+    assert {"Recipe_Smelt_C"} in recipe_sets
+    assert {"Recipe_Smelt_C", "Recipe_OreFromSAM_C"} not in recipe_sets
+
+
+def test_exclude_converter_recipes_gives_one_selection() -> None:
+    """Exactly one selection when Converter recipes are excluded."""
+    gd = _make_converter_game_data()
+    result = select_recipes(["Desc_Ingot_C"], set(), gd, exclude_converter_recipes=True)
+    assert len(result.selections) == 1
+
+
+def test_exclude_converter_false_preserves_both_branches() -> None:
+    """exclude_converter_recipes=False (default) leaves behaviour unchanged."""
+    gd = _make_converter_game_data()
+    result = select_recipes(["Desc_Ingot_C"], set(), gd, exclude_converter_recipes=False)
+    assert len(result.selections) == 2
+
+
 # ---------------------------------------------------------------------------
 # Declared available inputs are treated as terminals in the DFS
 # ---------------------------------------------------------------------------

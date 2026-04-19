@@ -15,6 +15,7 @@ export interface AppState {
   outputs: ItemEntry[];
   unlockedAlternates: string[];
   clockingAvailable: boolean;
+  excludeConverterRecipes: boolean;
   solverStatus: SolverStatus;
   solveResult: SolveResponse | null;
   solveError: string | null;
@@ -38,6 +39,7 @@ export type Action =
   | { type: "UPDATE_OUTPUT_AMOUNT"; id: string; amount: number }
   | { type: "TOGGLE_ALTERNATE"; class_name: string }
   | { type: "SET_CLOCKING"; value: boolean }
+  | { type: "SET_EXCLUDE_CONVERTER"; value: boolean }
   | { type: "SET_ITEMS"; items: Item[] }
   | { type: "SET_RECIPES"; recipes: Recipe[] }
   | { type: "DATA_ERROR"; error: string }
@@ -63,6 +65,7 @@ export const initialState: AppState = {
   outputs: [],
   unlockedAlternates: [],
   clockingAvailable: true,
+  excludeConverterRecipes: false,
   solverStatus: "idle",
   solveResult: null,
   solveError: null,
@@ -131,6 +134,8 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case "SET_CLOCKING":
       return { ...state, clockingAvailable: action.value };
+    case "SET_EXCLUDE_CONVERTER":
+      return { ...state, excludeConverterRecipes: action.value };
     case "SET_ITEMS":
       return { ...state, items: action.items, dataLoading: false };
     case "SET_RECIPES":

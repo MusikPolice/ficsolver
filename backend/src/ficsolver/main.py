@@ -43,6 +43,7 @@ class SolveRequest(BaseModel):
     outputs: dict[str, float]
     unlocked_alternates: list[str] = Field(default_factory=list)
     clocking_available: bool = True
+    exclude_converter_recipes: bool = False
     page_size: int = Field(default=_DEFAULT_PAGE_SIZE, ge=1, le=100)
 
     @model_validator(mode="after")
@@ -253,6 +254,7 @@ def solve(request: SolveRequest, game_data: GameDataDep) -> SolveResponse:
         unlocked_alternates,
         game_data,
         available_inputs=set(available_inputs.keys()),
+        exclude_converter_recipes=request.exclude_converter_recipes,
     )
 
     if phase1_result.failure is not None:

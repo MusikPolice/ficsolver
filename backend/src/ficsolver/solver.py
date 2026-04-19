@@ -54,12 +54,16 @@ class Phase1Result:
     failure: Phase1Failure | None = None
 
 
+_CONVERTER_MACHINE_CLASS = "Build_Converter_C"
+
+
 def select_recipes(
     desired_outputs: list[str],
     unlocked_alternates: set[str],
     game_data: GameData,
     chain_limit: int = 200,
     available_inputs: set[str] | None = None,
+    exclude_converter_recipes: bool = False,
 ) -> Phase1Result:
     """Run Phase 1: enumerate minimal recipe sets via DFS.
 
@@ -69,6 +73,9 @@ def select_recipes(
     available_inputs: item classes the user has declared as on-hand.  Items in
     this set are treated like raw resources in the DFS — the solver will offer
     a branch where they are taken as given rather than produced via recipe.
+
+    exclude_converter_recipes: when True, recipes that run in the Converter
+    building (SAM-based resource conversion) are excluded from all branches.
     """
     declared: set[str] = available_inputs or set()
     selections: list[RecipeSelection] = []
@@ -82,6 +89,7 @@ def select_recipes(
         unlocked_alternates,
         game_data,
         declared,
+        exclude_converter_recipes,
     ):
         has_cycle = _detect_cycle(raw_selected)
         selections.append(RecipeSelection(raw_selected, has_cycle, byproduct_deps))
@@ -109,6 +117,7 @@ def _dfs(
     unlocked_alternates: set[str],
     game_data: GameData,
     available_inputs: set[str],
+    exclude_converter_recipes: bool = False,
 ) -> Iterator[tuple[dict[str, Recipe], dict[str, str]]]:
     """Yield (selected_recipes, byproduct_deps) for each fully-resolved chain."""
 
@@ -135,10 +144,13 @@ def _dfs(
             unlocked_alternates,
             game_data,
             available_inputs,
+            exclude_converter_recipes,
         )
         return
 
-    producers = _get_available_producers(item_class, game_data, unlocked_alternates)
+    producers = _get_available_producers(
+        item_class, game_data, unlocked_alternates, exclude_converter_recipes
+    )
 
     # Determine whether this item can be treated as a terminal input rather than
     # always being produced via a recipe.  This is true when the item is a
@@ -165,6 +177,7 @@ def _dfs(
             unlocked_alternates,
             game_data,
             available_inputs,
+            exclude_converter_recipes,
         )
         return
 
@@ -180,6 +193,7 @@ def _dfs(
             unlocked_alternates,
             game_data,
             available_inputs,
+            exclude_converter_recipes,
         )
 
     # For explicitly declared available inputs, don't explore producer recipe
@@ -200,6 +214,7 @@ def _dfs(
                 unlocked_alternates,
                 game_data,
                 available_inputs,
+                exclude_converter_recipes,
             )
             continue
 
@@ -215,6 +230,7 @@ def _dfs(
             unlocked_alternates,
             game_data,
             available_inputs,
+            exclude_converter_recipes,
         )
 
 
@@ -235,6 +251,7 @@ def _get_available_producers(
     item_class: str,
     game_data: GameData,
     unlocked_alternates: set[str],
+    exclude_converter_recipes: bool = False,
 ) -> list[Recipe]:
     """Return standard recipes + unlocked alternates that produce item_class."""
     return [
@@ -243,6 +260,7 @@ def _get_available_producers(
         if not r.is_build_gun
         and any(p.item_class == item_class for p in r.products)
         and (not r.is_alternate or r.class_name in unlocked_alternates)
+        and not (exclude_converter_recipes and r.machine_class == _CONVERTER_MACHINE_CLASS)
     ]
 
 
