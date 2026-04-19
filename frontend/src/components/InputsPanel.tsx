@@ -5,10 +5,11 @@ import type { Action, ItemEntry } from "../state";
 interface Props {
   inputs: ItemEntry[];
   items: Item[];
+  loading?: boolean;
   dispatch: Dispatch<Action>;
 }
 
-export default function InputsPanel({ inputs, items, dispatch }: Props) {
+export default function InputsPanel({ inputs, items, loading = false, dispatch }: Props) {
   return (
     <section aria-label="Available Inputs">
       <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -66,9 +67,10 @@ export default function InputsPanel({ inputs, items, dispatch }: Props) {
       <button
         type="button"
         onClick={() => dispatch({ type: "ADD_INPUT" })}
-        className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+        disabled={loading}
+        className="mt-2 text-sm text-blue-400 hover:text-blue-300 disabled:text-gray-600 disabled:cursor-not-allowed"
       >
-        + Add input
+        {loading ? "+ Add input (loading…)" : "+ Add input"}
       </button>
     </section>
   );

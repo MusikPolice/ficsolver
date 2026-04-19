@@ -1,0 +1,70 @@
+[
+  {
+    "NativeClass": "/Script/CoreUObject.Class'/Script/FactoryGame.FGResourceDescriptor'",
+    "Classes": [
+      { "ClassName": "Desc_OreIron_C", "mDisplayName": "Iron Ore" }
+    ]
+  },
+  {
+    "NativeClass": "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptor'",
+    "Classes": [
+      { "ClassName": "Desc_IronIngot_C", "mDisplayName": "Iron Ingot" },
+      { "ClassName": "Desc_IronPlate_C", "mDisplayName": "Iron Plate" },
+      { "ClassName": "Desc_IronRod_C",   "mDisplayName": "Iron Rod" },
+      { "ClassName": "Desc_Wire_C",      "mDisplayName": "Wire" },
+      { "ClassName": "Desc_Cable_C",     "mDisplayName": "Cable" }
+    ]
+  },
+  {
+    "NativeClass": "/Script/CoreUObject.Class'/Script/FactoryGame.FGBuildableManufacturer'",
+    "Classes": [
+      { "ClassName": "Build_ConstructorMk1_C", "mDisplayName": "Constructor" },
+      { "ClassName": "Build_SmelterMk1_C",     "mDisplayName": "Smelter" }
+    ]
+  },
+  {
+    "NativeClass": "/Script/CoreUObject.Class'/Script/FactoryGame.FGRecipe'",
+    "Classes": [
+      {
+        "ClassName": "Recipe_IngotIron_C",
+        "mDisplayName": "Iron Ingot",
+        "mIngredients": "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/RawResources/OreIron/Desc_OreIron.Desc_OreIron_C'\",Amount=1)",
+        "mProduct":     "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronIngot/Desc_IronIngot.Desc_IronIngot_C'\",Amount=1)",
+        "mProducedIn": "(\"/Game/FactoryGame/Buildable/Factory/SmelterMk1/Build_SmelterMk1.Build_SmelterMk1_C\")",
+        "mManufactoringDuration": "2"
+      },
+      {
+        "ClassName": "Recipe_IronPlate_C",
+        "mDisplayName": "Iron Plate",
+        "mIngredients": "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronIngot/Desc_IronIngot.Desc_IronIngot_C'\",Amount=3)",
+        "mProduct":     "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronPlate/Desc_IronPlate.Desc_IronPlate_C'\",Amount=2)",
+        "mProducedIn": "(\"/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C\")",
+        "mManufactoringDuration": "6"
+      },
+      {
+        "ClassName": "Recipe_IronRod_C",
+        "mDisplayName": "Iron Rod",
+        "mIngredients": "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronIngot/Desc_IronIngot.Desc_IronIngot_C'\",Amount=1)",
+        "mProduct":     "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronRod/Desc_IronRod.Desc_IronRod_C'\",Amount=1)",
+        "mProducedIn": "(\"/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C\")",
+        "mManufactoringDuration": "4"
+      },
+      {
+        "ClassName": "Recipe_Wire_C",
+        "mDisplayName": "Wire",
+        "mIngredients": "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/IronIngot/Desc_IronIngot.Desc_IronIngot_C'\",Amount=1)",
+        "mProduct":     "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/Wire/Desc_Wire.Desc_Wire_C'\",Amount=2)",
+        "mProducedIn": "(\"/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C\")",
+        "mManufactoringDuration": "4"
+      },
+      {
+        "ClassName": "Recipe_Cable_C",
+        "mDisplayName": "Cable",
+        "mIngredients": "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/Wire/Desc_Wire.Desc_Wire_C'\",Amount=2)",
+        "mProduct":     "(ItemClass=\"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Resource/Parts/Cable/Desc_Cable.Desc_Cable_C'\",Amount=1)",
+        "mProducedIn": "(\"/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C\")",
+        "mManufactoringDuration": "2"
+      }
+    ]
+  }
+]

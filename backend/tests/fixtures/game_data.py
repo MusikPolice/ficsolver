@@ -100,6 +100,17 @@ CYCLIC_FIXTURE: list[dict] = [
 
 FIXTURE: list[dict] = [
     # ------------------------------------------------------------------
+    # Building descriptors — FGBuildingDescriptor bucket (no mDisplayName)
+    # These represent placeable buildings, not craftable items; the /items
+    # endpoint must filter them out so they don't pollute the UI dropdown.
+    # ------------------------------------------------------------------
+    {
+        "NativeClass": "/Script/CoreUObject.Class'/Script/FicSolverGame.FGBuildingDescriptor'",
+        "Classes": [
+            {"ClassName": "Desc_FabricatorBuilding_C", "mDisplayName": ""},
+        ],
+    },
+    # ------------------------------------------------------------------
     # Items — FGItemDescriptor bucket
     # ------------------------------------------------------------------
     {

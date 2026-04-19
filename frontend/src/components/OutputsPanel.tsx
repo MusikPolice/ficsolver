@@ -7,10 +7,11 @@ const MAX_OUTPUTS = 10;
 interface Props {
   outputs: ItemEntry[];
   items: Item[];
+  loading?: boolean;
   dispatch: Dispatch<Action>;
 }
 
-export default function OutputsPanel({ outputs, items, dispatch }: Props) {
+export default function OutputsPanel({ outputs, items, loading = false, dispatch }: Props) {
   const atLimit = outputs.length >= MAX_OUTPUTS;
 
   return (
@@ -73,10 +74,10 @@ export default function OutputsPanel({ outputs, items, dispatch }: Props) {
       <button
         type="button"
         onClick={() => dispatch({ type: "ADD_OUTPUT" })}
-        disabled={atLimit}
+        disabled={atLimit || loading}
         className="mt-2 text-sm text-blue-400 hover:text-blue-300 disabled:text-gray-600 disabled:cursor-not-allowed"
       >
-        + Add output
+        {loading ? "+ Add output (loading…)" : "+ Add output"}
       </button>
     </section>
   );

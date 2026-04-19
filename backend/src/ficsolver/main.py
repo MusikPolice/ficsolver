@@ -213,7 +213,10 @@ def health() -> dict[str, str]:
 
 @app.get("/items")
 def list_items(game_data: GameDataDep) -> list[Item]:
-    return list(game_data.items.values())
+    return sorted(
+        (item for item in game_data.items.values() if item.display_name),
+        key=lambda i: i.display_name,
+    )
 
 
 @app.get("/recipes")

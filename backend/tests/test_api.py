@@ -22,7 +22,20 @@ def test_list_items_status(client: TestClient) -> None:
 
 def test_list_items_count(client: TestClient) -> None:
     items = client.get("/items").json()
-    assert len(items) == 8  # 7 FGItemDescriptor + 1 FGResourceDescriptor
+    # 7 FGItemDescriptor + 1 FGResourceDescriptor; FGBuildingDescriptor excluded (no display name)
+    assert len(items) == 8
+
+
+def test_list_items_excludes_unnamed(client: TestClient) -> None:
+    items = client.get("/items").json()
+    # Building descriptors (e.g. Desc_Beam_C) have no mDisplayName and must be filtered out
+    assert all(i["display_name"] for i in items)
+
+
+def test_list_items_sorted_alphabetically(client: TestClient) -> None:
+    items = client.get("/items").json()
+    names = [i["display_name"] for i in items]
+    assert names == sorted(names)
 
 
 def test_list_items_shape(client: TestClient) -> None:

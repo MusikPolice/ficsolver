@@ -21,7 +21,8 @@ def cyclic_game_data():  # type: ignore[no-untyped-def]
 def test_item_node_count(game_data) -> None:  # type: ignore[no-untyped-def]
     g = build_recipe_graph(game_data)
     item_nodes = [n for n, d in g.nodes(data=True) if d["node_type"] == "item"]
-    assert len(item_nodes) == 8  # 7 FGItemDescriptor + 1 FGResourceDescriptor
+    # 7 FGItemDescriptor + 1 FGResourceDescriptor + 1 FGBuildingDescriptor (no display name)
+    assert len(item_nodes) == 9
 
 
 def test_recipe_node_count(game_data) -> None:  # type: ignore[no-untyped-def]
