@@ -182,6 +182,12 @@ def _dfs(
             available_inputs,
         )
 
+    # For explicitly declared available inputs, don't explore producer recipe
+    # branches — producing something the user already has is strictly worse.
+    # Raw resources (not declared) may still branch into Converter recipes.
+    if item_class in available_inputs:
+        return
+
     # Branch: one path per available producer recipe.
     for recipe in producers:
         if recipe.class_name in selected:

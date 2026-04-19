@@ -298,21 +298,25 @@ def test_declared_input_without_any_gives_one_chain() -> None:
 
 
 def test_declared_input_adds_skip_recipe_branch() -> None:
-    """Declaring Ingot as an available input adds a branch where Ingot is taken
-    from stock (only Press recipe needed) alongside the full mine+smelt branch."""
+    """Declaring Ingot as an available input yields only the stock branch (Press
+    only) — the mine+smelt branch is pruned because producing a declared input
+    internally is always strictly worse than using what the user already has."""
     gd = _make_declared_input_game_data()
     result = select_recipes(["Desc_Plate_C"], set(), gd, available_inputs={"Desc_Ingot_C"})
     assert result.failure is None
 
     recipe_sets = [set(sel.recipes.keys()) for sel in result.selections]
-    # Use-declared-input branch: only the press recipe
+    # Only the take-from-stock branch: press recipe only
     assert {"Recipe_Press_C"} in recipe_sets
-    # Full chain branch: smelt + press
-    assert {"Recipe_Smelt_C", "Recipe_Press_C"} in recipe_sets
+    # The mine+smelt branch must NOT appear — it produces something the user already has
+    assert {"Recipe_Smelt_C", "Recipe_Press_C"} not in recipe_sets
 
 
-def test_declared_input_gives_two_selections() -> None:
-    """Exactly two selections when an intermediate item is declared as available."""
+def test_declared_input_gives_one_selection() -> None:
+    """Exactly one selection when an intermediate item is declared as available.
+
+    Producing a declared input internally is strictly worse, so only the
+    take-from-stock branch is returned."""
     gd = _make_declared_input_game_data()
     result = select_recipes(["Desc_Plate_C"], set(), gd, available_inputs={"Desc_Ingot_C"})
-    assert len(result.selections) == 2
+    assert len(result.selections) == 1
