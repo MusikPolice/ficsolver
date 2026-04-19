@@ -139,35 +139,92 @@ describe("SET_ITEMS / SET_RECIPES / DATA_ERROR", () => {
   });
 });
 
+const CHAIN_STUB = {
+  machine_groups: [],
+  raw_resource_consumption: {},
+  implicit_outputs: {},
+  has_cycle: false,
+  budget: {},
+  has_deficit: false,
+  total_resource_consumed: 0,
+};
+
+function makeResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    solve_id: "test-id",
+    total_count: 1,
+    page: 1,
+    page_size: 10,
+    cap_reached: false,
+    results: [CHAIN_STUB],
+    failure: null,
+    all_chains_have_deficit: false,
+    warnings: null,
+    ...overrides,
+  };
+}
+
 describe("SOLVE_START / SOLVE_SUCCESS / SOLVE_ERROR", () => {
-  it("sets loading status", () => {
+  it("sets loading status and clears displayedResults", () => {
     const s = reducer(initialState, { type: "SOLVE_START" });
     expect(s.solverStatus).toBe("loading");
     expect(s.solveResult).toBeNull();
     expect(s.solveError).toBeNull();
+    expect(s.displayedResults).toEqual([]);
+    expect(s.isLoadingMore).toBe(false);
   });
 
-  it("sets success status with result", () => {
-    const result = {
-      solve_id: "test-id",
-      total_count: 0,
-      page: 1,
-      page_size: 10,
-      cap_reached: false,
-      results: [],
-      failure: null,
-      all_chains_have_deficit: false,
-      warnings: null,
-    };
+  it("sets success status and populates displayedResults from first page", () => {
+    const result = makeResponse();
     const s = reducer(initialState, { type: "SOLVE_SUCCESS", result });
     expect(s.solverStatus).toBe("success");
     expect(s.solveResult).toEqual(result);
+    expect(s.displayedResults).toEqual([CHAIN_STUB]);
+    expect(s.isLoadingMore).toBe(false);
   });
 
   it("sets error status with message", () => {
     const s = reducer(initialState, { type: "SOLVE_ERROR", error: "Timeout" });
     expect(s.solverStatus).toBe("error");
     expect(s.solveError).toBe("Timeout");
+  });
+});
+
+describe("LOAD_MORE_START / LOAD_MORE_SUCCESS", () => {
+  it("LOAD_MORE_START sets isLoadingMore", () => {
+    const s = reducer(initialState, { type: "LOAD_MORE_START" });
+    expect(s.isLoadingMore).toBe(true);
+  });
+
+  it("LOAD_MORE_SUCCESS appends results and clears isLoadingMore", () => {
+    const firstResult = makeResponse({ results: [CHAIN_STUB] });
+    const secondChain = { ...CHAIN_STUB, total_resource_consumed: 42 };
+    const secondResult = makeResponse({ page: 2, results: [secondChain] });
+
+    const s1 = reducer(initialState, { type: "SOLVE_SUCCESS", result: firstResult });
+    const s2 = reducer(s1, { type: "LOAD_MORE_START" });
+    const s3 = reducer(s2, { type: "LOAD_MORE_SUCCESS", result: secondResult });
+
+    expect(s3.displayedResults).toHaveLength(2);
+    expect(s3.displayedResults[0]).toEqual(CHAIN_STUB);
+    expect(s3.displayedResults[1]).toEqual(secondChain);
+    expect(s3.isLoadingMore).toBe(false);
+    expect(s3.solveResult).toEqual(secondResult);
+  });
+});
+
+describe("SORT_CHANGED", () => {
+  it("replaces displayedResults and updates currentSort", () => {
+    const firstResult = makeResponse({ results: [CHAIN_STUB, CHAIN_STUB] });
+    const sortedResult = makeResponse({ results: [CHAIN_STUB] });
+
+    const s1 = reducer(initialState, { type: "SOLVE_SUCCESS", result: firstResult });
+    expect(s1.displayedResults).toHaveLength(2);
+
+    const s2 = reducer(s1, { type: "SORT_CHANGED", result: sortedResult, sort: "resource" });
+    expect(s2.displayedResults).toHaveLength(1);
+    expect(s2.currentSort).toBe("resource");
+    expect(s2.solveResult).toEqual(sortedResult);
   });
 });
 

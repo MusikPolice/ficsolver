@@ -1,4 +1,6 @@
-import type { Item, Recipe, SolveResponse } from "./api/types";
+import type { ChainResultOut, Item, Recipe, SolveResponse } from "./api/types";
+
+export type SortKey = "resource";
 
 export interface ItemEntry {
   id: string;
@@ -20,6 +22,9 @@ export interface AppState {
   recipes: Recipe[];
   dataLoading: boolean;
   dataError: string | null;
+  displayedResults: ChainResultOut[];
+  currentSort: SortKey;
+  isLoadingMore: boolean;
 }
 
 export type Action =
@@ -38,7 +43,10 @@ export type Action =
   | { type: "DATA_ERROR"; error: string }
   | { type: "SOLVE_START" }
   | { type: "SOLVE_SUCCESS"; result: SolveResponse }
-  | { type: "SOLVE_ERROR"; error: string };
+  | { type: "SOLVE_ERROR"; error: string }
+  | { type: "LOAD_MORE_START" }
+  | { type: "LOAD_MORE_SUCCESS"; result: SolveResponse }
+  | { type: "SORT_CHANGED"; result: SolveResponse; sort: SortKey };
 
 let _nextId = 1;
 
@@ -62,6 +70,9 @@ export const initialState: AppState = {
   recipes: [],
   dataLoading: true,
   dataError: null,
+  displayedResults: [],
+  currentSort: "resource",
+  isLoadingMore: false,
 };
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -127,11 +138,40 @@ export function reducer(state: AppState, action: Action): AppState {
     case "DATA_ERROR":
       return { ...state, dataLoading: false, dataError: action.error };
     case "SOLVE_START":
-      return { ...state, solverStatus: "loading", solveResult: null, solveError: null };
+      return {
+        ...state,
+        solverStatus: "loading",
+        solveResult: null,
+        solveError: null,
+        displayedResults: [],
+        isLoadingMore: false,
+      };
     case "SOLVE_SUCCESS":
-      return { ...state, solverStatus: "success", solveResult: action.result };
+      return {
+        ...state,
+        solverStatus: "success",
+        solveResult: action.result,
+        displayedResults: action.result.results,
+        isLoadingMore: false,
+      };
     case "SOLVE_ERROR":
       return { ...state, solverStatus: "error", solveError: action.error };
+    case "LOAD_MORE_START":
+      return { ...state, isLoadingMore: true };
+    case "LOAD_MORE_SUCCESS":
+      return {
+        ...state,
+        isLoadingMore: false,
+        solveResult: action.result,
+        displayedResults: [...state.displayedResults, ...action.result.results],
+      };
+    case "SORT_CHANGED":
+      return {
+        ...state,
+        currentSort: action.sort,
+        solveResult: action.result,
+        displayedResults: action.result.results,
+      };
     default:
       return state;
   }

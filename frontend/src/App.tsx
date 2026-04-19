@@ -1,10 +1,12 @@
-import { useEffect, useReducer } from "react";
-import { getItems, getRecipes, postSolve } from "./api/client";
+import { useEffect, useMemo, useReducer } from "react";
+import { getItems, getRecipes, getSolveResults, postSolve } from "./api/client";
 import AlternatesPanel from "./components/AlternatesPanel";
 import InputsPanel from "./components/InputsPanel";
 import OutputsPanel from "./components/OutputsPanel";
+import ResultsView from "./components/ResultsView";
 import SettingsPanel from "./components/SettingsPanel";
 import { initialState, reducer, relevantAlternates } from "./state";
+import type { SortKey } from "./state";
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -46,8 +48,49 @@ export default function App() {
     }
   }
 
+  // Build item class → display name lookup for ResultsView
+  const itemNameMap = useMemo(
+    () => new Map(state.items.map((item) => [item.class_name, item.display_name])),
+    [state.items],
+  );
+
+  async function handleLoadMore() {
+    const { solveResult, currentSort } = state;
+    if (!solveResult?.solve_id) return;
+    dispatch({ type: "LOAD_MORE_START" });
+    try {
+      const result = await getSolveResults(solveResult.solve_id, {
+        sort: currentSort,
+        page: solveResult.page + 1,
+        page_size: solveResult.page_size,
+      });
+      dispatch({ type: "LOAD_MORE_SUCCESS", result });
+    } catch (err: unknown) {
+      dispatch({ type: "SOLVE_ERROR", error: String(err) });
+    }
+  }
+
+  async function handleSortChange(sort: SortKey) {
+    const { solveResult } = state;
+    if (!solveResult?.solve_id) return;
+    try {
+      const result = await getSolveResults(solveResult.solve_id, {
+        sort,
+        page: 1,
+        page_size: solveResult.page_size,
+      });
+      dispatch({ type: "SORT_CHANGED", result, sort });
+    } catch (err: unknown) {
+      dispatch({ type: "SOLVE_ERROR", error: String(err) });
+    }
+  }
+
   const alternates = relevantAlternates(state.outputs, state.recipes);
   const canSolve = state.outputs.some((o) => o.item_class && o.amount > 0);
+  const showResults =
+    state.solverStatus === "success" && state.solveResult !== null
+      ? state.solveResult
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -79,6 +122,17 @@ export default function App() {
         </button>
         {state.solverStatus === "error" && state.solveError && (
           <p className="text-sm text-red-400">Solve failed: {state.solveError}</p>
+        )}
+        {showResults && (
+          <ResultsView
+            response={showResults}
+            displayedResults={state.displayedResults}
+            isLoadingMore={state.isLoadingMore}
+            currentSort={state.currentSort}
+            itemNameMap={itemNameMap}
+            onLoadMore={() => void handleLoadMore()}
+            onSortChange={(sort) => void handleSortChange(sort)}
+          />
         )}
       </main>
     </div>
